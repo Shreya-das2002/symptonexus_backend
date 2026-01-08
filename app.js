@@ -16,9 +16,8 @@ PatientDetails.belongsTo(Patient, { foreignKey: "patient_id" });
 
 // Sync database
 sequelize.authenticate()
-sequelize.sync({ alter: false })
-  .then(() => console.log("All tables created / updated"))
-  .catch(err => console.error(err));
+  .then(() => console.log("DB Connected"))
+  .catch(err => console.error("DB Error:", err));
 
 app.use(express.json());
 app.use(responseMiddleware);
