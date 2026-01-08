@@ -12,20 +12,25 @@ class AuthService {
   static async login(email, password) {
 
     // Step-1: find user
+  console.time("USER_QUERY");
     const user = await User.findOne({ where: { user_name: email } });
+console.timeEnd("USER_QUERY");
 
     if (!user) {
       return { success: false, message: "User ID is not valid" };
     }
 
     // Step-2: check password
-    const match = await bcrypt.compare(password, user.password);
+    console.time("PASSWORD_CHECK");
+const match = await bcrypt.compare(password, user.password);
+console.timeEnd("PASSWORD_CHECK");
 
     if (!match) {
       return { success: false, message: "Password not match" };
     }
 
     // Step-3: determine role & load profile
+    console.time("PROFILE_QUERY");
     let role = "";
     let profile = null;
     const userType = Number(user.user_type);
@@ -55,6 +60,7 @@ class AuthService {
     if (!profile) {
       return { success: false, message: "Profile not found" };
     }
+    console.timeEnd("PROFILE_QUERY");
 
     // Step-4: create token
     const token = jwt.sign(
