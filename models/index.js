@@ -42,7 +42,7 @@ PatientDetails.belongsTo(Address, { foreignKey: "permanent_address_id", as: "Per
 // DomainLookup.hasMany(PatientDetails, { foreignKey: "gender" });
 
 PatientDetails.belongsTo(DomainLookup, { foreignKey: "blood_group", as: "BloodGroup" });
-PatientDetails.belongsTo(DomainLookup, { foreignKey: "gender", as: "Gender" });
+PatientDetails.belongsTo(DomainLookup, { foreignKey: "gender", as: "genderLookup" });
 
 
 User.belongsToMany(Role, { through: UserRoleMapping, foreignKey: "user_id" });

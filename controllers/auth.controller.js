@@ -23,15 +23,13 @@ class AuthController {
 });
 
   static signupPatient = asyncHandler(async (req, res) => {
-    const result = await AuthService.signupPatient(req.body);
+  const result = await AuthService.signupPatient(req.body);
 
-    if (!result.success) {
-      return res.sendResponse(res.STATUS.BUSINESS_ERROR, result.message);
-    }
+  if (!result.success) {
+    return res.sendResponse(res.STATUS.BUSINESS_ERROR, result.message);
+  }
 
-    return res.sendResponse(res.STATUS.SUCCESS, "", result.data);
-  });
-
+  return res.sendResponse(res.STATUS.SUCCESS, "", result);
+});
 }
-
 module.exports = AuthController;
