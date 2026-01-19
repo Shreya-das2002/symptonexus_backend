@@ -3,33 +3,78 @@ const asyncHandler = require("../utils/asyncHandler");
 
 class AuthController {
 
+  // ===================== LOGIN =====================
   static login = asyncHandler(async (req, res) => {
-  console.time("TOTAL");
+    try {
+      const { email, password } = req.body;
 
-  console.time("SERVICE");
-  const result = await AuthService.login(req.body.email, req.body.password);
-  console.timeEnd("SERVICE");
+      const result = await AuthService.login(email, password);
 
-  console.time("RESPONSE");
-  const response = res.sendResponse(
-    result.success ? res.STATUS.SUCCESS : res.STATUS.BUSINESS_ERROR,
-    result.message || "",
-    result.data || {}
-  );
-  console.timeEnd("RESPONSE");
+      // 🔐 Defensive check (VERY IMPORTANT)
+      if (!result || typeof result.success !== "boolean") {
+        return res.sendResponse(
+          res.STATUS.INTERNAL_SERVER_ERROR,
+          "Invalid server response",
+          {}
+        );
+      }
 
-  console.timeEnd("TOTAL");
-  return response;
-});
+      return res.sendResponse(
+        result.success ? res.STATUS.SUCCESS : res.STATUS.BUSINESS_ERROR,
+        result.message || "",
+        result.data || {}
+      );
 
+    } catch (error) {
+      console.error("LOGIN ERROR:", error);
+
+      return res.sendResponse(
+        res.STATUS.INTERNAL_SERVER_ERROR,
+        "Something went wrong. Please try again.",
+        {}
+      );
+    }
+  });
+
+  // ===================== SIGNUP =====================
   static signupPatient = asyncHandler(async (req, res) => {
-  const result = await AuthService.signupPatient(req.body);
+    try {
+      const result = await AuthService.signupPatient(req.body);
 
-  if (!result.success) {
-    return res.sendResponse(res.STATUS.BUSINESS_ERROR, result.message);
-  }
+      // 🔐 Defensive check
+      if (!result || typeof result.success !== "boolean") {
+        return res.sendResponse(
+          res.STATUS.INTERNAL_SERVER_ERROR,
+          "Invalid server response",
+          {}
+        );
+      }
 
-  return res.sendResponse(res.STATUS.SUCCESS, "", result);
-});
+      if (!result.success) {
+        return res.sendResponse(
+          res.STATUS.BUSINESS_ERROR,
+          result.message || "Signup failed",
+          {}
+        );
+      }
+
+      return res.sendResponse(
+        res.STATUS.SUCCESS,
+        "Signup successful",
+        result.data || {}
+      );
+
+    } catch (error) {
+      console.error("Signup Patient Error:", error);
+
+      return res.sendResponse(
+        res.STATUS.INTERNAL_SERVER_ERROR,
+        "Something went wrong. Please try again later.",
+        {}
+      );
+    }
+  });
+
 }
+
 module.exports = AuthController;

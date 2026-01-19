@@ -1,3 +1,4 @@
+const sequelize = require("../config/database"); 
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
@@ -7,40 +8,58 @@ const Patient = require("../models/patient");
 const Admin = require("../models/Admin_user");
 const PatientDetails = require("../models/Patient_Details");
 const DomainLookup = require("../models/Domain_lookup");
+const { SUCCESS } = require("../constants/statusCodes");
 
 class AuthService {
 
   // ===================== LOGIN =====================
-  static async login(email, password) {
+ static async login(email, password) {
+  const t = await sequelize.transaction();
 
-    const user = await User.findOne({ where: { user_name: email } });
-    if (!user) return { success: false, message: "User ID is not valid" };
+  try {
+    const user = await User.findOne({
+      where: { user_name: email },
+      transaction: t
+    });
+
+    if (!user) {
+      await t.rollback();
+      return { success: false, message: "User ID is not valid" };
+    }
 
     const match = await bcrypt.compare(password, user.password);
-    if (!match) return { success: false, message: "Password not match" };
+    if (!match) {
+      await t.rollback();
+      return { success: false, message: "Password not match" };
+    }
 
     let role = "";
     let profile = null;
-    const userType = Number(user.user_type);
 
-    if (userType === 5) {
+    if (+user.user_type === 5) {
       role = "patient";
-      profile = await Patient.findOne({ where: { email } });
-    } else if (userType === 4) {
+      profile = await Patient.findOne({
+        where: { email },
+        transaction: t
+      });
+    } else if (+user.user_type === 4) {
       role = "doctor";
-      profile = await Doctor.findOne({ where: { email } });
+      profile = await Doctor.findOne({
+        where: { email },
+        transaction: t
+      });
     } else {
       role = "admin";
-      profile = await Admin.findOne({ where: { email } });
+      profile = await Admin.findOne({
+        where: { email },
+        transaction: t
+      });
     }
 
-    if (!profile) return { success: false, message: "Profile not found" };
-
-    const token = jwt.sign(
-      { user_id: user.user_id, user_type: user.user_type },
-      process.env.JWT_SECRET || "my_secret_key",
-      { expiresIn: "1d" }
-    );
+    if (!profile) {
+      await t.rollback();
+      return { success: false, message: "Profile not found" };
+    }
 
     let userData = {
       email: profile.email,
@@ -48,14 +67,14 @@ class AuthService {
     };
 
     if (role === "patient") {
-
       const details = await PatientDetails.findOne({
         where: { patient_id: profile.patient_id },
         include: [{
           model: DomainLookup,
           as: "genderLookup",
           attributes: ["domain_value"]
-        }]
+        }],
+        transaction: t
       });
 
       userData = {
@@ -69,15 +88,36 @@ class AuthService {
       };
     }
 
+    const token = jwt.sign(
+      { user_id: user.user_id, user_type: user.user_type },
+      process.env.JWT_SECRET || "my_secret_key",
+      { expiresIn: "1d" }
+    );
+
+    await t.commit();
+
     return {
       success: true,
       data: { token, role, user: userData }
     };
+
+  } catch (error) {
+    await t.rollback();
+    console.error("LOGIN TRANSACTION ERROR:", error);
+
+    return {
+      success: false,
+      message: "Login failed"
+    };
   }
+}
+
 
   // ===================== SIGNUP =====================
   static async signupPatient(payload) {
+  const t = await sequelize.transaction();
 
+  try {
     const {
       first_name,
       middle_name,
@@ -92,7 +132,11 @@ class AuthService {
     if (!email || !phone)
       return { success: false, message: "Missing required fields" };
 
-    const emailExists = await User.findOne({ where: { user_name: email } });
+    const emailExists = await User.findOne({
+      where: { user_name: email },
+      transaction: t
+    });
+
     if (emailExists)
       return { success: false, message: "Email already registered" };
 
@@ -101,15 +145,16 @@ class AuthService {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // 1️⃣ Patient
     const patient = await Patient.create({
       first_name,
       middle_name,
       last_name,
       email,
       phone_no: phone
-    });
+    }, { transaction: t });
 
-    // Convert gender text → numeric lookup ID
+    // 2️⃣ Gender lookup
     let genderId = null;
 
     if (gender) {
@@ -117,7 +162,8 @@ class AuthService {
         where: {
           domain_type: "gender",
           domain_value: gender
-        }
+        },
+        transaction: t
       });
 
       if (!lookup) {
@@ -127,20 +173,24 @@ class AuthService {
       genderId = lookup.domain_lookup_id;
     }
 
+    // 3️⃣ Patient details
     await PatientDetails.create({
       patient_id: patient.patient_id,
       gender: genderId
-    });
+    }, { transaction: t });
 
+    // 4️⃣ User
     await User.create({
       user_name: email,
       password: hashedPassword,
       user_type: 5,
       ref_id: patient.patient_id,
       status: "Active"
-    });
+    }, { transaction: t });
 
-    // Build clean response with gender text
+    await t.commit();
+
+    // Fetch response (outside transaction)
     const patientDetails = await PatientDetails.findOne({
       where: { patient_id: patient.patient_id },
       include: [{
@@ -162,7 +212,17 @@ class AuthService {
         gender: patientDetails?.genderLookup?.domain_value || ""
       }
     };
+
+  } catch (error) {
+    await t.rollback();
+    console.error("SIGNUP TRANSACTION ERROR:", error);
+
+    return {
+      success: false,
+      message: error.message || "Signup failed"
+    };
   }
+}
 }
 
 module.exports = AuthService;

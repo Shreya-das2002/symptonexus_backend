@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require("cors");
 const app = express();
 const responseMiddleware = require("./middlewares/response.middleware");
 
@@ -14,14 +15,14 @@ PatientDetails.belongsTo(Patient, { foreignKey: "patient_id" });
 sequelize.authenticate()
   .then(() => console.log("DB Connected"))
   .catch(err => console.error("DB Error:", err));
-
+app.use(cors());
 app.use(express.json());
 app.use(responseMiddleware);
 
 const registerRoutes = require('./routes/index.routes');
 registerRoutes(app);
 
-const PORT = 3000;
+const PORT = 4000;
 
 // 🔥 IMPORTANT FIX
 const server = app.listen(PORT, () => {

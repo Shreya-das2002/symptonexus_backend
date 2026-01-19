@@ -45,7 +45,7 @@ class PatientProfileService {
 
       patient_detail: {
         dob: detail?.dob || "",
-        gender: detail?.genderLookup?.domain_value || "",   // 👈 TEXT value
+        gender: detail?.genderLookup?.domain_value || "",   //  TEXT value
         blood_group: detail?.blood_group || "",
         allergies: detail?.allergies || "",
         height: detail?.height || "",
