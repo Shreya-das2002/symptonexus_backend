@@ -24,13 +24,21 @@ class AuthService {
 
     if (!user) {
       await t.rollback();
-      return { success: false, message: "User ID is not valid" };
+      return { 
+        success: false, 
+        message: "User ID is not valid",
+        errorCode: "USER_NOT_FOUND"
+        };
     }
 
     const match = await bcrypt.compare(password, user.password);
     if (!match) {
       await t.rollback();
-      return { success: false, message: "Password not match" };
+      return { 
+        success: false, 
+        message: "Password not match",
+        errorCode: "INVALID_PASSWORD"
+      };
     }
 
     let role = "";

@@ -10,7 +10,7 @@ class AuthController {
 
       const result = await AuthService.login(email, password);
 
-      // 🔐 Defensive check (VERY IMPORTANT)
+      //  Defensive check (VERY IMPORTANT)
       if (!result || typeof result.success !== "boolean") {
         return res.sendResponse(
           res.STATUS.INTERNAL_SERVER_ERROR,
@@ -22,7 +22,8 @@ class AuthController {
       return res.sendResponse(
         result.success ? res.STATUS.SUCCESS : res.STATUS.BUSINESS_ERROR,
         result.message || "",
-        result.data || {}
+        result.data || {},
+        result.errorCode || null
       );
 
     } catch (error) {
