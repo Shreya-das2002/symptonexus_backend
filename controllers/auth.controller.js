@@ -38,43 +38,51 @@ class AuthController {
   });
 
   // ===================== SIGNUP =====================
-  static signupPatient = asyncHandler(async (req, res) => {
-    try {
-      const result = await AuthService.signupPatient(req.body);
+ static signupPatient = asyncHandler(async (req, res) => {
+  try {
+    const result = await AuthService.signupPatient(req.body);
 
-      // 🔐 Defensive check
-      if (!result || typeof result.success !== "boolean") {
-        return res.sendResponse(
-          res.STATUS.INTERNAL_SERVER_ERROR,
-          "Invalid server response",
-          {}
-        );
-      }
-
-      if (!result.success) {
-        return res.sendResponse(
-          res.STATUS.BUSINESS_ERROR,
-          result.message || "Signup failed",
-          {}
-        );
-      }
-
-      return res.sendResponse(
-        res.STATUS.SUCCESS,
-        "Signup successful",
-        result.data || {}
-      );
-
-    } catch (error) {
-      console.error("Signup Patient Error:", error);
-
+    // Defensive check
+    if (!result || typeof result.success !== "boolean") {
       return res.sendResponse(
         res.STATUS.INTERNAL_SERVER_ERROR,
-        "Something went wrong. Please try again later.",
-        {}
+        "Invalid server response",
+        {},
+        "INVALID_RESPONSE"
       );
     }
-  });
+
+    //  Business failure (EMAIL EXISTS, PASSWORD MISMATCH, etc.)
+  if (!result.success) {
+  return res.sendResponse(
+    res.STATUS.BUSINESS_ERROR,     // 400
+    result.message,
+    {},
+    result.errorCode,
+    false                          // IMPORTANT
+  );
+}
+
+return res.sendResponse(
+  res.STATUS.SUCCESS,             // 200
+  "Signup successful",
+  result.data,
+  null,
+  true
+);
+
+  } catch (error) {
+    console.error("Signup Patient Error:", error);
+
+    return res.sendResponse(
+      res.STATUS.INTERNAL_SERVER_ERROR,
+      "Something went wrong. Please try again later.",
+      {},
+      "SERVER_ERROR"
+    );
+  }
+});
+
 
 }
 

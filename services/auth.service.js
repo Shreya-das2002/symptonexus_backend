@@ -122,7 +122,7 @@ class AuthService {
 
 
   // ===================== SIGNUP =====================
-  static async signupPatient(payload) {
+ static async signupPatient(payload) {
   const t = await sequelize.transaction();
 
   try {
@@ -138,18 +138,30 @@ class AuthService {
     } = payload;
 
     if (!email || !phone)
-      return { success: false, message: "Missing required fields" };
+      return { success: false, message: "Missing required fields", errorCode: "Missing_required_fields" };
 
     const emailExists = await User.findOne({
       where: { user_name: email },
       transaction: t
     });
 
-    if (emailExists)
-      return { success: false, message: "Email already registered" };
+    if (emailExists) {
+  await t.rollback();
+  return {
+    success: false,
+    message: "Email already registered",
+    errorCode: "EMAIL_ALREADY_EXISTS"
+  };
+}
 
-    if (password !== confirm_password)
-      return { success: false, message: "Passwords do not match" };
+    if (password !== confirm_password){
+      await t.rollback();
+      return {
+      message: "Password do not match",
+    errorCode: "Password_do_not_match"
+    }
+  }
+  
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -210,7 +222,7 @@ class AuthService {
 
     return {
       success: true,
-      patient: {
+      data: {
         patient_id: patient.patient_id,
         first_name: patient.first_name,
         middle_name: patient.middle_name,
@@ -227,10 +239,10 @@ class AuthService {
 
     return {
       success: false,
-      message: error.message || "Signup failed"
+      message: error.message || "Signup failed",
     };
   }
-}
+ }
 }
 
 module.exports = AuthService;
