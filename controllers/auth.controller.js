@@ -6,9 +6,9 @@ class AuthController {
   // ===================== LOGIN =====================
   static login = asyncHandler(async (req, res) => {
     try {
-      const { email, password } = req.body;
+      const { email, password, role } = req.body;
 
-      const result = await AuthService.login(email, password);
+      const result = await AuthService.login(email, password, role);
 
       //  Defensive check (VERY IMPORTANT)
       if (!result || typeof result.success !== "boolean") {

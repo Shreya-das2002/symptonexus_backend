@@ -10,13 +10,24 @@ const PatientDetails = require("../models/Patient_Details");
 const DomainLookup = require("../models/Domain_lookup");
 const { SUCCESS } = require("../constants/statusCodes");
 
+/* ================= ROLE MAP ================= */
+const ROLE_MAP = {
+  patient: 5,
+  doctor: 4,
+  admin: 1
+};
+
 class AuthService {
 
   // ===================== LOGIN =====================
- static async login(email, password) {
+  // ===================== LOGIN =====================
+static async login(email, password, roleFromUI) {
   const t = await sequelize.transaction();
 
   try {
+    // Normalize role
+    const normalizedRole = roleFromUI?.toLowerCase();
+
     const user = await User.findOne({
       where: { user_name: email },
       transaction: t
@@ -24,51 +35,63 @@ class AuthService {
 
     if (!user) {
       await t.rollback();
-      return { 
-        success: false, 
+      return {
+        success: false,
         message: "User ID is not valid",
         errorCode: "USER_NOT_FOUND"
-        };
+      };
     }
 
+    // 🔐 Password validation FIRST
     const match = await bcrypt.compare(password, user.password);
     if (!match) {
       await t.rollback();
-      return { 
-        success: false, 
+      return {
+        success: false,
         message: "Password not match",
         errorCode: "INVALID_PASSWORD"
       };
     }
 
+    // 🧠 Role validation AFTER password
+    if (
+      !normalizedRole ||
+      !ROLE_MAP[normalizedRole] ||
+      Number(ROLE_MAP[normalizedRole]) !== Number(user.user_type)
+    ) {
+      await t.rollback();
+      return {
+        success: false,
+        message: `This account is not registered as ${normalizedRole}`,
+        errorCode: "ROLE_MISMATCH"
+      };
+    }
+
+    // 🧾 Load profile
     let role = "";
     let profile = null;
 
-    if (+user.user_type === 5) {
+    if (Number(user.user_type) === 5) {
       role = "patient";
-      profile = await Patient.findOne({
-        where: { email },
-        transaction: t
-      });
-    } else if (+user.user_type === 4) {
+      profile = await Patient.findOne({ where: { email }, transaction: t });
+    } else if (Number(user.user_type) === 4) {
       role = "doctor";
-      profile = await Doctor.findOne({
-        where: { email },
-        transaction: t
-      });
+      profile = await Doctor.findOne({ where: { email }, transaction: t });
     } else {
       role = "admin";
-      profile = await Admin.findOne({
-        where: { email },
-        transaction: t
-      });
+      profile = await Admin.findOne({ where: { email }, transaction: t });
     }
 
     if (!profile) {
       await t.rollback();
-      return { success: false, message: "Profile not found" };
+      return {
+        success: false,
+        message: "Profile not found",
+        errorCode: "PROFILE_NOT_FOUND"
+      };
     }
 
+    // 👤 Build response
     let userData = {
       email: profile.email,
       role
@@ -115,7 +138,8 @@ class AuthService {
 
     return {
       success: false,
-      message: "Login failed"
+      message: "Login failed",
+      errorCode: "LOGIN_FAILED"
     };
   }
 }
