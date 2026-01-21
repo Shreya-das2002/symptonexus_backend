@@ -1,16 +1,18 @@
 const STATUS = require("../constants/statusCodes");
 
 module.exports = (req, res, next) => {
-  res.sendResponse = (status, error_message = "", data = {}) => {
+
+  // attach status constants
+  res.STATUS = STATUS;
+
+  res.sendResponse = (status, message = "", data = {}, errorCode = null) => {
     return res.status(status).json({
-      status,
-      error_message,
-      data
+      success: status < 400,
+      message,
+      data,
+      errorCode
     });
   };
-
-  // attach status constants also
-  res.STATUS = STATUS;
 
   next();
 };

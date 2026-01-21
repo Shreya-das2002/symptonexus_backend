@@ -3,31 +3,86 @@ const asyncHandler = require("../utils/asyncHandler");
 
 class AuthController {
 
+  // ===================== LOGIN =====================
   static login = asyncHandler(async (req, res) => {
-    const { email, password } = req.body;
+    try {
+      const { email, password, role } = req.body;
 
-    const result = await AuthService.login(email, password);
+      const result = await AuthService.login(email, password, role);
 
-    // console.log("CONTROLLER RESULT =>", result);
-    // console.log("LOGIN CONTROLLER HIT");
+      //  Defensive check (VERY IMPORTANT)
+      if (!result || typeof result.success !== "boolean") {
+        return res.sendResponse(
+          res.STATUS.INTERNAL_SERVER_ERROR,
+          "Invalid server response",
+          {}
+        );
+      }
 
-    // if service wants to send business error
-    if (!result.success) {
-      return res.sendResponse(res.STATUS.BUSINESS_ERROR, result.message);
+      return res.sendResponse(
+        result.success ? res.STATUS.SUCCESS : res.STATUS.BUSINESS_ERROR,
+        result.message || "",
+        result.data || {},
+        result.errorCode || null
+      );
+
+    } catch (error) {
+      console.error("LOGIN ERROR:", error);
+
+      return res.sendResponse(
+        res.STATUS.INTERNAL_SERVER_ERROR,
+        "Something went wrong. Please try again.",
+        {}
+      );
     }
-
-    return res.sendResponse(res.STATUS.SUCCESS, "", result.data);
   });
 
-  static signupPatient = asyncHandler(async (req, res) => {
+  // ===================== SIGNUP =====================
+ static signupPatient = asyncHandler(async (req, res) => {
+  try {
     const result = await AuthService.signupPatient(req.body);
 
-    if (!result.success) {
-      return res.sendResponse(res.STATUS.BUSINESS_ERROR, result.message);
+    // Defensive check
+    if (!result || typeof result.success !== "boolean") {
+      return res.sendResponse(
+        res.STATUS.INTERNAL_SERVER_ERROR,
+        "Invalid server response",
+        {},
+        "INVALID_RESPONSE"
+      );
     }
 
-    return res.sendResponse(res.STATUS.SUCCESS, "", result.data);
-  });
+    //  Business failure (EMAIL EXISTS, PASSWORD MISMATCH, etc.)
+  if (!result.success) {
+  return res.sendResponse(
+    res.STATUS.BUSINESS_ERROR,     // 400
+    result.message,
+    {},
+    result.errorCode,
+    false                          // IMPORTANT
+  );
+}
+
+return res.sendResponse(
+  res.STATUS.SUCCESS,             // 200
+  "Signup successful",
+  result.data,
+  null,
+  true
+);
+
+  } catch (error) {
+    console.error("Signup Patient Error:", error);
+
+    return res.sendResponse(
+      res.STATUS.INTERNAL_SERVER_ERROR,
+      "Something went wrong. Please try again later.",
+      {},
+      "SERVER_ERROR"
+    );
+  }
+});
+
 
 }
 

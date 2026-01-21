@@ -1,3 +1,4 @@
+const sequelize = require("../config/database"); 
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
@@ -6,79 +7,149 @@ const Doctor = require("../models/Doctor");
 const Patient = require("../models/patient");
 const Admin = require("../models/Admin_user");
 const PatientDetails = require("../models/Patient_Details");
+const DomainLookup = require("../models/Domain_lookup");
+const { SUCCESS } = require("../constants/statusCodes");
+
+/* ================= ROLE MAP ================= */
+const ROLE_MAP = {
+  patient: 5,
+  doctor: 4,
+  admin: 1
+};
 
 class AuthService {
 
-  static async login(email, password) {
+  // ===================== LOGIN =====================
+  // ===================== LOGIN =====================
+static async login(email, password, roleFromUI) {
+  const t = await sequelize.transaction();
 
-    // Step-1: find user
-    const user = await User.findOne({ where: { user_name: email } });
+  try {
+    // Normalize role
+    const normalizedRole = roleFromUI?.toLowerCase();
+
+    const user = await User.findOne({
+      where: { user_name: email },
+      transaction: t
+    });
 
     if (!user) {
-      return { success: false, message: "User ID is not valid" };
+      await t.rollback();
+      return {
+        success: false,
+        message: "User ID is not valid",
+        errorCode: "USER_NOT_FOUND"
+      };
     }
 
-    // Step-2: check password
+    // 🔐 Password validation FIRST
     const match = await bcrypt.compare(password, user.password);
-
     if (!match) {
-      return { success: false, message: "Password not match" };
+      await t.rollback();
+      return {
+        success: false,
+        message: "Password not match",
+        errorCode: "INVALID_PASSWORD"
+      };
     }
 
-    // Step-3: determine role & load profile
+    // 🧠 Role validation AFTER password
+    if (
+      !normalizedRole ||
+      !ROLE_MAP[normalizedRole] ||
+      Number(ROLE_MAP[normalizedRole]) !== Number(user.user_type)
+    ) {
+      await t.rollback();
+      return {
+        success: false,
+        message: `This account is not registered as ${normalizedRole}`,
+        errorCode: "ROLE_MISMATCH"
+      };
+    }
+
+    // 🧾 Load profile
     let role = "";
     let profile = null;
-    const userType = Number(user.user_type);
 
-    switch (userType) {
-      case 5:
-        role = "patient";
-        profile = await Patient.findOne({ where: { email } });
-        break;
-
-      case 4:
-        role = "doctor";
-        profile = await Doctor.findOne({ where: { email } });
-        break;
-
-      case 1:
-      case 2:
-      case 3:
-        role = "admin";
-        profile = await Admin.findOne({ where: { email } });
-        break;
-
-      default:
-        return { success: false, message: "Invalid user type" };
+    if (Number(user.user_type) === 5) {
+      role = "patient";
+      profile = await Patient.findOne({ where: { email }, transaction: t });
+    } else if (Number(user.user_type) === 4) {
+      role = "doctor";
+      profile = await Doctor.findOne({ where: { email }, transaction: t });
+    } else {
+      role = "admin";
+      profile = await Admin.findOne({ where: { email }, transaction: t });
     }
 
     if (!profile) {
-      return { success: false, message: "Profile not found" };
+      await t.rollback();
+      return {
+        success: false,
+        message: "Profile not found",
+        errorCode: "PROFILE_NOT_FOUND"
+      };
     }
 
-    // Step-4: create token
+    // 👤 Build response
+    let userData = {
+      email: profile.email,
+      role
+    };
+
+    if (role === "patient") {
+      const details = await PatientDetails.findOne({
+        where: { patient_id: profile.patient_id },
+        include: [{
+          model: DomainLookup,
+          as: "genderLookup",
+          attributes: ["domain_value"]
+        }],
+        transaction: t
+      });
+
+      userData = {
+        ...userData,
+        patient_id: profile.patient_id,
+        first_name: profile.first_name,
+        middle_name: profile.middle_name,
+        last_name: profile.last_name,
+        phone_no: profile.phone_no,
+        gender: details?.genderLookup?.domain_value || ""
+      };
+    }
+
     const token = jwt.sign(
-      {
-        user_id: user.user_id,
-        user_name: user.user_name,
-        user_type: user.user_type
-      },
+      { user_id: user.user_id, user_type: user.user_type },
       process.env.JWT_SECRET || "my_secret_key",
       { expiresIn: "1d" }
     );
 
+    await t.commit();
+
     return {
       success: true,
-      data: {
-        token,
-        role,
-        user: profile
-      }
+      data: { token, role, user: userData }
+    };
+
+  } catch (error) {
+    await t.rollback();
+    console.error("LOGIN TRANSACTION ERROR:", error);
+
+    return {
+      success: false,
+      message: "Login failed",
+      errorCode: "LOGIN_FAILED"
     };
   }
+}
 
-  static async signupPatient(payload) {
 
+  // ===================== SIGNUP =====================
+ static async signupPatient(payload) {
+  const t = await sequelize.transaction();
+
+  try {
     const {
       first_name,
       middle_name,
@@ -90,48 +161,112 @@ class AuthService {
       gender
     } = payload;
 
-    if (!email || !phone) {
-      return { success: false, message: "Missing required fields" };
-    }
+    if (!email || !phone)
+      return { success: false, message: "Missing required fields", errorCode: "Missing_required_fields" };
 
-    const emailExists = await User.findOne({ where: { user_name: email } });
+    const emailExists = await User.findOne({
+      where: { user_name: email },
+      transaction: t
+    });
+
     if (emailExists) {
-      return { success: false, message: "Email already registered" };
-    }
+  await t.rollback();
+  return {
+    success: false,
+    message: "Email already registered",
+    errorCode: "EMAIL_ALREADY_EXISTS"
+  };
+}
 
-    if (password !== confirm_password) {
-      return { success: false, message: "Passwords do not match" };
+    if (password !== confirm_password){
+      await t.rollback();
+      return {
+      message: "Password do not match",
+    errorCode: "Password_do_not_match"
     }
+  }
+  
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // 1️⃣ Patient
     const patient = await Patient.create({
       first_name,
       middle_name,
       last_name,
       email,
-      phone,
-      gender
-    });
+      phone_no: phone
+    }, { transaction: t });
 
+    // 2️⃣ Gender lookup
+    let genderId = null;
+
+    if (gender) {
+      const lookup = await DomainLookup.findOne({
+        where: {
+          domain_type: "gender",
+          domain_value: gender
+        },
+        transaction: t
+      });
+
+      if (!lookup) {
+        throw new Error("Invalid gender value");
+      }
+
+      genderId = lookup.domain_lookup_id;
+    }
+
+    // 3️⃣ Patient details
     await PatientDetails.create({
-      patient_id: patient.patient_id
-    });
+      patient_id: patient.patient_id,
+      gender: genderId
+    }, { transaction: t });
 
+    // 4️⃣ User
     await User.create({
       user_name: email,
       password: hashedPassword,
       user_type: 5,
       ref_id: patient.patient_id,
-      gender,
       status: "Active"
+    }, { transaction: t });
+
+    await t.commit();
+
+    // Fetch response (outside transaction)
+    const patientDetails = await PatientDetails.findOne({
+      where: { patient_id: patient.patient_id },
+      include: [{
+        model: DomainLookup,
+        as: "genderLookup",
+        attributes: ["domain_value"]
+      }]
     });
 
     return {
       success: true,
-      data: { patient }
+      data: {
+        patient_id: patient.patient_id,
+        first_name: patient.first_name,
+        middle_name: patient.middle_name,
+        last_name: patient.last_name,
+        email: patient.email,
+        phone_no: patient.phone_no,
+        gender: patientDetails?.genderLookup?.domain_value || ""
+      }
+    };
+
+  } catch (error) {
+    await t.rollback();
+    console.error("SIGNUP TRANSACTION ERROR:", error);
+
+    return {
+      success: false,
+      message: error.message || "Signup failed",
     };
   }
+ }
 }
 
 module.exports = AuthService;
