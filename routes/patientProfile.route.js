@@ -1,9 +1,8 @@
 const router = require("express").Router();
 const controller = require("../controllers/patientProfile.controller");
+const auth = require("../middlewares/auth.middleware");
 
-const response = require("../middlewares/response.middleware");
-
-router.get("/profile", response, controller.getProfile);
-router.post("/profile", response, controller.saveProfile);
+router.get("/profile", auth, controller.getProfile);
+router.post("/profile", auth, controller.saveProfile);
 
 module.exports = router;

@@ -5,25 +5,50 @@ class PatientProfileController {
   async getProfile(req, res) {
     try {
       const patient_id = req.user.patient_id;
+
       const profile = await patientProfileService.getProfile(patient_id);
-      return res.success(profile);
+
+      if (!profile) {
+        return res.sendResponse(
+          res.STATUS.NOT_FOUND,
+          "Profile not found"
+        );
+      }
+
+      return res.sendResponse(
+        res.STATUS.SUCCESS,
+        "Profile fetched successfully",
+        profile
+      );
+
     } catch (err) {
       console.error(err);
-      return res.error("Failed to load profile");
+      return res.sendResponse(
+        res.STATUS.INTERNAL_SERVER_ERROR,
+        "Failed to load profile"
+      );
     }
   }
 
   async saveProfile(req, res) {
     try {
       const patient_id = req.user.patient_id;
+
       await patientProfileService.saveProfile(patient_id, req.body);
-      return res.success("Profile updated successfully");
+
+      return res.sendResponse(
+        res.STATUS.SUCCESS,
+        "Profile updated successfully"
+      );
+
     } catch (err) {
       console.error(err);
-      return res.error("Failed to save profile");
+      return res.sendResponse(
+        res.STATUS.INTERNAL_SERVER_ERROR,
+        "Failed to save profile"
+      );
     }
   }
-
 }
 
 module.exports = new PatientProfileController();

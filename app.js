@@ -25,7 +25,7 @@ registerRoutes(app);
 
 const PORT = 4000;
 
-// 🔥 IMPORTANT FIX
+//  IMPORTANT FIX
 const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
