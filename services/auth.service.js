@@ -8,6 +8,8 @@ const Patient = require("../models/patient");
 const Admin = require("../models/Admin_user");
 const PatientDetails = require("../models/Patient_Details");
 const DomainLookup = require("../models/Domain_lookup");
+const ControlMaster = require("../models/Control_master");
+const ControlRoleMapping = require("../models/Control_role_mapping");
 
 /* ================= ROLE MAP ================= */
 const ROLE_MAP = {
@@ -102,6 +104,21 @@ if (normalizedRole === "admin") {
         });
       }
 
+      /* ================= LOAD SIDENAV MENUS ================= */
+const menus = await ControlMaster.findAll({
+  include: [{
+    model: ControlRoleMapping,
+    where: { role_id: Number(user.user_type) },
+    attributes: []
+  }],
+  where: {
+    control_type: "menu",
+    status: "Active"
+  },
+  order: [["control_master_id", "ASC"]],
+  transaction: t
+});
+
       /* ================= BUILD RESPONSE ================= */
       let userData = {
         email: profile.email,
@@ -159,7 +176,7 @@ if (normalizedRole === "admin") {
 
       return {
         success: true,
-        data: { token, role, user: userData }
+        data: { token, role, user: userData,  menus  }
       };
 
     } catch (error) {

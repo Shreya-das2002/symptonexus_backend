@@ -10,9 +10,6 @@ require("./models/User");
 require("./models/Admin_user");
 require("./models/Doctor");
 
-Patient.hasOne(PatientDetails, { foreignKey: "patient_id" });
-PatientDetails.belongsTo(Patient, { foreignKey: "patient_id" });
-
 sequelize.authenticate()
   .then(() => console.log("DB Connected"))
   .catch(err => console.error("DB Error:", err));

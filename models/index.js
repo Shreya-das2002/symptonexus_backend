@@ -29,9 +29,6 @@ DoctorSpecialization.belongsTo(Doctor, { foreignKey: "doctor_id" });
 Doctor.hasMany(DoctorExperience, { foreignKey: "doctor_id" });
 DoctorExperience.belongsTo(Doctor, { foreignKey: "doctor_id" });
 
-Patient.hasOne(PatientDetails, { foreignKey: "patient_id" });
-PatientDetails.belongsTo(Patient, { foreignKey: "patient_id" });
-
 Address.hasMany(PatientDetails, { foreignKey: "current_address_id" });
 Address.hasMany(PatientDetails, { foreignKey: "permanent_address_id" });
 
@@ -51,6 +48,10 @@ Role.belongsToMany(User, { through: UserRoleMapping, foreignKey: "role_id" });
 Role.belongsToMany(ControlMaster, { through: ControlRoleMapping, foreignKey: "role_id" });
 ControlMaster.belongsToMany(Role, { through: ControlRoleMapping, foreignKey: "control_master_id" });
 
+ControlMaster.hasMany(ControlRoleMapping, { foreignKey: "control_master_id"});
+
+ControlRoleMapping.belongsTo(ControlMaster, {foreignKey: "control_master_id"});
+
 
 module.exports = {
   sequelize,
@@ -64,5 +65,7 @@ module.exports = {
   DomainLookup,
   Role, 
   ControlMaster,
-  User
+  User,
+  ControlRoleMapping,
+  UserRoleMapping
 };
