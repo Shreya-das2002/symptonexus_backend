@@ -142,8 +142,10 @@ const menus = await ControlMaster.findAll({
           ...userData,
           doctor_id: profile.doctor_id,
           first_name: profile.first_name,
+          middle_name: profile.middle_name,
           last_name: profile.last_name,
-          phone_no: profile.phone_no
+          phone_no: profile.phone_no,
+          gender: details?.genderLookup?.domain_value || ""
         };
       }
 
@@ -151,7 +153,11 @@ const menus = await ControlMaster.findAll({
         userData = {
           ...userData,
           admin_id: profile.admin_id,
-          name: profile.name
+          first_name: profile.first_name,
+          middle_name: profile.middle_name,
+          last_name: profile.last_name,
+          phone_no: profile.phone_no,
+          gender: details?.genderLookup?.domain_value || ""
         };
       }
 
