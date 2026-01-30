@@ -66,7 +66,7 @@ const getPatientProfileService = async (patient_id) => {
   };
 
   return {
-    user,
+    user: user.toJSON(),
     profile,
   };
 };
