@@ -2,23 +2,35 @@ const {
   getPatientProfileService,
 } = require("../services/patientProfile.service");
 
+const sequelize = require("../config/database"); // adjust path if needed
+
 exports.getPatientProfile = async (req, res) => {
+  const transaction = await sequelize.transaction();
+
   try {
-    const { patient_id } = req.params;
+    try {
+      const { patient_id } = req.params;
 
-    const { user, profile } =
-      await getPatientProfileService(patient_id);
+      const { user, profile } =
+        await getPatientProfileService(patient_id, transaction);
 
-    return res.json({
-      success: true,
-      data: {
-        token: req.headers.authorization || null,
-        role: "patient",
-        user,
-        profile,
-        errorcode: null,
-      },
-    });
+      await transaction.commit();
+
+      return res.json({
+        success: true,
+        data: {
+          token: req.headers.authorization || null,
+          role: "patient",
+          user,
+          profile,
+          errorcode: null,
+        },
+      });
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
+
   } catch (error) {
     console.error(error);
 
