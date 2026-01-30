@@ -16,6 +16,8 @@ sequelize.authenticate()
 app.use(cors());
 app.use(express.json());
 app.use(responseMiddleware);
+app.use(express.urlencoded({ extended: true }));
+
 
 const registerRoutes = require('./routes/index.routes');
 registerRoutes(app);

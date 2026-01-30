@@ -1,8 +1,9 @@
 const express = require("express");
 const router = express.Router();
 
-const { getPatientProfile } = require("../controllers/patientDetails.controller");
+const { savePatientProfile } = require("../controllers/patientDetails.controller");
 
-router.post("/profile", getPatientProfile);
+// ✅ ONLY POST API
+router.post("/profile", savePatientProfile);
 
 module.exports = router;

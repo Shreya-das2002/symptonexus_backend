@@ -1,47 +1,44 @@
 const {
-  getPatientProfileService,
+  savePatientProfileService,
 } = require("../services/patientProfile.service");
 
-const sequelize = require("../config/database"); // adjust path if needed
-
-exports.getPatientProfile = async (req, res) => {
-  const transaction = await sequelize.transaction();
-
+exports.savePatientProfile = async (req, res) => {
   try {
-    try {
-      const { patient_id } = req.params;
+    console.log("REQUEST BODY:", req.body); // debug
 
-      const { user, profile } =
-        await getPatientProfileService(patient_id, transaction);
+    /* ================= PAYLOAD DATA ================= */
+    const { patient_id } = req.body;
 
-      await transaction.commit();
-
-      return res.json({
-        success: true,
+    // validation
+    if (!patient_id) {
+      return res.status(400).json({
+        success: false,
         data: {
-          token: req.headers.authorization || null,
-          role: "patient",
-          user,
-          profile,
-          errorcode: null,
+          errorcode: "PATIENT_ID_REQUIRED",
         },
       });
-    } catch (error) {
-      await transaction.rollback();
-      throw error;
     }
 
-  } catch (error) {
-    console.error(error);
+    /* ================= SERVICE ================= */
+    const { user, profile } = await savePatientProfileService(req.body);
 
-    return res.status(404).json({
+    /* ================= RESPONSE ================= */
+    return res.status(200).json({
+      success: true,
+      data: {
+        message: "Patient profile saved successfully",
+        user,
+        profile,
+      },
+    });
+
+  } catch (error) {
+    console.error("SAVE PROFILE ERROR:", error.message);
+
+    return res.status(500).json({
       success: false,
       data: {
-        token: null,
-        role: "patient",
-        user: null,
-        profile: null,
-        errorcode: error.message || "UNKNOWN_ERROR",
+        errorcode: error.message || "INTERNAL_SERVER_ERROR",
       },
     });
   }
