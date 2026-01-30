@@ -28,6 +28,16 @@ const PatientDetails = sequelize.define("patient_details", {
     allowNull: true,
   },
 
+  marital_status: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+
+    occupation: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+
   blood_group: {
     type: DataTypes.INTEGER,
     allowNull: true,
@@ -38,9 +48,32 @@ const PatientDetails = sequelize.define("patient_details", {
     allowNull: true,
   },
 
-  height: DataTypes.FLOAT,
-  weight: DataTypes.FLOAT,
-}, {
+  height: {
+      type: DataTypes.FLOAT,
+      allowNull: true,
+    },
+
+    weight: {
+      type: DataTypes.FLOAT,
+      allowNull: true,
+    },
+
+
+  allergies: {
+      type: DataTypes.JSON, // array
+      allowNull: true,
+    },
+
+    smoking: {
+      type: DataTypes.BOOLEAN,
+      allowNull: true,
+    },
+
+    alcohol: {
+      type: DataTypes.BOOLEAN,
+      allowNull: true,
+    },
+  }, {
   timestamps: false,
 });
 
