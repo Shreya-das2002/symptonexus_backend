@@ -19,7 +19,7 @@ class PatientDetailsController {
       }
 
       /* ================= SERVICE ================= */
-      // ✅ CALL METHOD, NOT THE INSTANCE
+      // CALL METHOD, NOT THE INSTANCE
       const { user, profile } =
         await patientProfileService.savePatientProfile(req.body);
 
