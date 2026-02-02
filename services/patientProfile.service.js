@@ -4,6 +4,13 @@ const Address = require("../models/Address");
 const DomainLookup = require("../models/Domain_lookup");
 const sequelize = require("../config/database");
 
+/* ================= NUMBER HELPER ================= */
+
+const toNumber = (v) => {
+  const n = Number(v);
+  return Number.isNaN(n) ? null : n;
+};
+
 /* ================= ADDRESS BUILDER ================= */
 
 const buildAddress = (addr) => {
@@ -40,7 +47,7 @@ class PatientProfileService {
         dob,
         marital_status,
         occupation,
-        blood_group, // STRING like "B-"
+        blood_group, // NUMBER like 4
         height,
         weight,
         allergies,
@@ -52,67 +59,69 @@ class PatientProfileService {
         throw new Error("PATIENT_ID_REQUIRED");
       }
 
-      /* ================= EXISTING DETAILS ================= */
-
       const existingDetails = await PatientDetails.findOne({
         where: { patient_id },
         transaction: t,
       });
 
-      /* ================= BLOOD GROUP RESOLUTION ================= */
+      /* ================= BLOOD GROUP ================= */
 
-      let bloodGroupId = null;
+      let bloodGroupValue = null;
 
-      if (blood_group) {
+      if (blood_group !== null && blood_group !== undefined) {
+        const value = toNumber(blood_group);
+
+        if (value === null) {
+          throw new Error(`INVALID_BLOOD_GROUP: ${blood_group}`);
+        }
+
         const bg = await DomainLookup.findOne({
           where: {
             domain_type: "blood_group",
-            domain_name: blood_group, // "B-"
+            domain_value: value,
           },
           transaction: t,
         });
 
         if (!bg) {
-          throw new Error(`INVALID_BLOOD_GROUP: ${blood_group}`);
+          throw new Error(`INVALID_BLOOD_GROUP: ${value}`);
         }
 
-        bloodGroupId = bg.domain_lookup_id;
+        bloodGroupValue = value;
       }
 
-      /* ================= ADDRESS HANDLING ================= */
+      /* ================= ADDRESS ================= */
 
       let currentAddressId = existingDetails?.current_address_id ?? null;
       let permanentAddressId = existingDetails?.permanent_address_id ?? null;
 
       if (current_address) {
-        const addrData = buildAddress(current_address);
-
+        const data = buildAddress(current_address);
         if (currentAddressId) {
-          await Address.update(addrData, {
+          await Address.update(data, {
             where: { address_id: currentAddressId },
             transaction: t,
           });
         } else {
-          const addr = await Address.create(addrData, { transaction: t });
+          const addr = await Address.create(data, { transaction: t });
           currentAddressId = addr.address_id;
         }
       }
 
       if (permanent_address) {
-        const addrData = buildAddress(permanent_address);
-
+        const data = buildAddress(permanent_address);
         if (permanentAddressId) {
-          await Address.update(addrData, {
+          await Address.update(data, {
             where: { address_id: permanentAddressId },
             transaction: t,
           });
         } else {
-          const addr = await Address.create(addrData, { transaction: t });
+          const addr = await Address.create(data, { transaction: t });
           permanentAddressId = addr.address_id;
         }
       }
 
-      /* ================= PATIENT DETAILS DATA ================= */
+      /* ================= SAVE DETAILS ================= */
 
       const data = {
         dob,
@@ -123,7 +132,7 @@ class PatientProfileService {
         allergies,
         smoking,
         alcohol,
-        blood_group: bloodGroupId, // ✅ FK SAFE
+        blood_group: bloodGroupValue,
         current_address_id: currentAddressId,
         permanent_address_id: permanentAddressId,
       };
@@ -140,18 +149,8 @@ class PatientProfileService {
         );
       }
 
-      /* ================= FETCH UPDATED DATA ================= */
-
       const user = await Patient.findOne({
         where: { patient_id },
-        attributes: [
-          "patient_id",
-          "first_name",
-          "middle_name",
-          "last_name",
-          "email",
-          "phone_no",
-        ],
         transaction: t,
       });
 
@@ -160,32 +159,12 @@ class PatientProfileService {
         transaction: t,
       });
 
-      const currentAddress = details?.current_address_id
-        ? await Address.findByPk(details.current_address_id, { transaction: t })
-        : null;
-
-      const permanentAddress = details?.permanent_address_id
-        ? await Address.findByPk(details.permanent_address_id, { transaction: t })
-        : null;
-
       await t.commit();
 
       return {
         success: true,
         user: user.toJSON(),
-        profile: {
-          dob: details?.dob ?? null,
-          marital_status: details?.marital_status ?? null,
-          occupation: details?.occupation ?? null,
-          blood_group: details?.blood_group ?? null, // number
-          height: details?.height ?? null,
-          weight: details?.weight ?? null,
-          allergies: details?.allergies ?? [],
-          smoking: details?.smoking ?? null,
-          alcohol: details?.alcohol ?? null,
-          current_address: currentAddress?.toJSON() || null,
-          permanent_address: permanentAddress?.toJSON() || null,
-        },
+        profile: details.toJSON(),
       };
 
     } catch (error) {
