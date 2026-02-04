@@ -4,4 +4,6 @@ const AdminController = require("../controllers/admin.controller");
 
 router.post("/create", AdminController.createAdmin);
 
+router.get("/alladmins", AdminController.getAllAdmins);
+
 module.exports = router;

@@ -1,5 +1,6 @@
 const asyncHandler = require("../utils/asyncHandler");
 const AdminService = require("../services/admin.service");
+const admin_user = require("../models/Admin_user");
 
 class AdminController {
 
@@ -25,6 +26,17 @@ class AdminController {
       });
     }
   });
+
+   // GET ALL ADMINS (STATIC + ASYNC + TRY-CATCH)
+  static async getAllAdmins(req, res) {
+    try {
+      const admins = await admin_user.findAll();
+      res.status(200).json(admins);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+
 
 }
 
