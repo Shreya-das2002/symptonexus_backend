@@ -10,6 +10,7 @@ const PatientDetails = require("../models/Patient_Details");
 const DomainLookup = require("../models/Domain_lookup");
 const ControlMaster = require("../models/Control_master");
 const ControlRoleMapping = require("../models/Control_role_mapping");
+const AdminUser = require("../models/Admin_user");
 
 /* ================= ROLE MAP ================= */
 const ROLE_MAP = {
@@ -23,174 +24,201 @@ const ROLE_MAP = {
 class AuthService {
 
   /* ===================== LOGIN ===================== */
-  static async login(email, password, roleFromUI) {
-    const t = await sequelize.transaction();
+static async login(email, password, roleFromUI) {
+  const t = await sequelize.transaction();
 
-    try {
-      let normalizedRole = roleFromUI?.toLowerCase();
+  try {
+    const normalizedRole = roleFromUI?.toLowerCase();
 
-if (normalizedRole === "admin") {
-  normalizedRole = "super admin"; // default admin login
-}
+    if (!normalizedRole) {
+      await t.rollback();
+      return { success: false, message: "Role is required" };
+    }
 
-      const user = await User.findOne({
-        where: { user_name: email },
-        transaction: t
-      });
+    const user = await User.findOne({
+      where: { user_name: email },
+      transaction: t
+    });
 
-      
-      if (!user) {
+    if (!user) {
+      await t.rollback();
+      return { success: false, message: "User ID is not valid" };
+    }
+
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) {
+      await t.rollback();
+      return { success: false, message: "Password not match" };
+    }
+
+    /* ================= ROLE VALIDATION ================= */
+
+    const userType = Number(user.user_type);
+
+    // UI sends "admin"
+    if (normalizedRole === "admin") {
+      if (![1, 2, 3].includes(userType)) {
         await t.rollback();
-        return { success: false, message: "User ID is not valid" };
+        return {
+          success: false,
+          message: "This account is not registered as admin"
+        };
       }
-
-      const match = await bcrypt.compare(password, user.password);
-      if (!match) {
-        await t.rollback();
-        return { success: false, message: "Password not match" };
-      }
-
-      if (
-        !normalizedRole ||
-        !ROLE_MAP[normalizedRole] ||
-        Number(user.user_type) !== ROLE_MAP[normalizedRole]
-      ) {
+    }
+    // UI sends specific role
+    else {
+      if (!ROLE_MAP[normalizedRole] || userType !== ROLE_MAP[normalizedRole]) {
         await t.rollback();
         return {
           success: false,
           message: `This account is not registered as ${normalizedRole}`
         };
       }
-
-      /* ================= LOAD PROFILE ================= */
-      const userType = Number(user.user_type);
-      let role = "";
-      let profile = null;
-
-      if (userType === 5) {
-        role = "patient";
-        profile = await Patient.findOne({ where: { email }, transaction: t });
-
-      } else if (userType === 4) {
-        role = "doctor";
-        profile = await Doctor.findOne({ where: { email }, transaction: t });
-
-      } else if ([1, 2, 3].includes(userType)) {
-        role =
-          userType === 1 ? "super admin" :
-          userType === 2 ? "standard admin" :
-          "guest admin";
-
-        profile = await Admin.findOne({ where: { email }, transaction: t });
-      }
-
-      if (!profile) {
-        await t.rollback();
-        return { success: false, message: "Profile not found" };
-      }
-
-      /* ================= LOAD DETAILS ================= */
-      let details = null;
-
-      if (role === "patient") {
-        details = await PatientDetails.findOne({
-          where: { patient_id: profile.patient_id },
-          include: [{
-            model: DomainLookup,
-            as: "genderLookup",
-            attributes: ["domain_value"]
-          }],
-          transaction: t
-        });
-      }
-
-      /* ================= LOAD SIDENAV MENUS ================= */
-const menus = await ControlMaster.findAll({
-  include: [{
-    model: ControlRoleMapping,
-    where: { role_id: Number(user.user_type) },
-    attributes: []
-  }],
-  where: {
-    control_type: "menu",
-    status: "Active"
-  },
-  order: [["control_master_id", "ASC"]],
-  transaction: t
-});
-
-      /* ================= BUILD RESPONSE ================= */
-      let userData = {
-        email: profile.email,
-        role
-      };
-
-      if (role === "patient") {
-        userData = {
-          ...userData,
-          patient_id: profile.patient_id,
-          first_name: profile.first_name,
-          middle_name: profile.middle_name,
-          last_name: profile.last_name,
-          phone_no: profile.phone_no,
-          gender: details?.genderLookup?.domain_value || ""
-        };
-      }
-
-      if (role === "doctor") {
-        userData = {
-          ...userData,
-          doctor_id: profile.doctor_id,
-          first_name: profile.first_name,
-          middle_name: profile.middle_name,
-          last_name: profile.last_name,
-          phone_no: profile.phone_no,
-          gender: details?.genderLookup?.domain_value || ""
-        };
-      }
-
-      if (role.includes("admin")) {
-        userData = {
-          ...userData,
-          admin_id: profile.admin_id,
-          first_name: profile.first_name,
-          middle_name: profile.middle_name,
-          last_name: profile.last_name,
-          phone_no: profile.phone_no,
-          gender: details?.genderLookup?.domain_value || ""
-        };
-      }
-
-      /* ================= TOKEN ================= */
-      const tokenPayload = {
-        user_id: user.user_id,
-        user_type: user.user_type,
-        role
-      };
-
-      if (role === "patient") tokenPayload.patient_id = profile.patient_id;
-      if (role === "doctor") tokenPayload.doctor_id = profile.doctor_id;
-      if (role.includes("admin")) tokenPayload.admin_id = profile.admin_id;
-
-      const token = jwt.sign(
-        tokenPayload,
-        process.env.JWT_SECRET,
-        { expiresIn: "1d" }
-      );
-
-      await t.commit();
-
-      return {
-        success: true,
-        data: { token, role, user: userData,  menus  }
-      };
-
-    } catch (error) {
-      await t.rollback();
-      console.error("LOGIN ERROR:", error);
-      return { success: false, message: "Login failed" };
     }
+
+    /* ================= LOAD PROFILE ================= */
+
+    let role = "";
+    let profile = null;
+
+    if (userType === 5) {
+      role = "patient";
+      profile = await Patient.findOne({
+        where: { email },
+        transaction: t
+      });
+
+    } else if (userType === 4) {
+      role = "doctor";
+      profile = await Doctor.findOne({
+        where: { email },
+        transaction: t
+      });
+
+    } else if ([1, 2, 3].includes(userType)) {
+      role =
+        userType === 1 ? "super admin" :
+        userType === 2 ? "standard admin" :
+        "guest admin";
+
+      profile = await Admin.findOne({
+        where: { email },
+        transaction: t
+      });
+    }
+
+    if (!profile) {
+      await t.rollback();
+      return { success: false, message: "Profile not found" };
+    }
+
+    /* ================= LOAD DETAILS (PATIENT ONLY) ================= */
+
+    let details = null;
+
+    if (role === "patient") {
+      details = await PatientDetails.findOne({
+        where: { patient_id: profile.patient_id },
+        include: [{
+          model: DomainLookup,
+          as: "genderLookup",
+          attributes: ["domain_value"]
+        }],
+        transaction: t
+      });
+    }
+
+    /* ================= LOAD SIDENAV MENUS ================= */
+
+    const menus = await ControlMaster.findAll({
+      include: [{
+        model: ControlRoleMapping,
+        where: { role_id: Number(user.user_type) },
+        attributes: []
+      }],
+      where: {
+        control_type: "menu",
+        status: "Active"
+      },
+      order: [["control_master_id", "ASC"]],
+      transaction: t
+    });
+
+    /* ================= BUILD RESPONSE ================= */
+
+    let userData = {
+      email: profile.email,
+      role
+    };
+
+    if (role === "patient") {
+      userData = {
+        ...userData,
+        patient_id: profile.patient_id,
+        first_name: profile.first_name,
+        middle_name: profile.middle_name,
+        last_name: profile.last_name,
+        phone_no: profile.phone_no,
+        gender: details?.genderLookup?.domain_value || ""
+      };
+    }
+
+    if (role === "doctor") {
+      userData = {
+        ...userData,
+        doctor_id: profile.doctor_id,
+        first_name: profile.first_name,
+        middle_name: profile.middle_name,
+        last_name: profile.last_name,
+        phone_no: profile.phone_no,
+        gender: ""
+      };
+    }
+
+    if (role.includes("admin")) {
+      userData = {
+        ...userData,
+        admin_id: profile.admin_user_id,
+        first_name: profile.first_name,
+        middle_name: profile.middle_name,
+        last_name: profile.last_name,
+        phone_no: profile.phone_no,
+        gender: profile.gender || ""
+      };
+    }
+
+    /* ================= TOKEN ================= */
+
+    const tokenPayload = {
+      user_id: user.user_id,
+      user_type: user.user_type,
+      role
+    };
+
+    if (role === "patient") tokenPayload.patient_id = profile.patient_id;
+    if (role === "doctor") tokenPayload.doctor_id = profile.doctor_id;
+    if (role.includes("admin")) tokenPayload.admin_id = profile.admin_user_id;
+
+    const token = jwt.sign(
+      tokenPayload,
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    await t.commit();
+
+    return {
+      success: true,
+      data: { token, role, user: userData, menus }
+    };
+
+  } catch (error) {
+    await t.rollback();
+    console.error("LOGIN ERROR:", error);
+    return { success: false, message: "Login failed" };
   }
+}
+
 
   /* ===================== SIGNUP (PATIENT) ===================== */
   static async signupPatient(payload) {
