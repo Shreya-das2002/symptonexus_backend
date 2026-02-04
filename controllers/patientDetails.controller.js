@@ -1,7 +1,10 @@
+const asyncHandler = require("../utils/asyncHandler");
 const patientProfileService = require("../services/patientProfile.service");
 
 class PatientDetailsController {
-  async savePatientProfile(req, res) {
+
+  /* ===================== SAVE PATIENT PROFILE ===================== */
+  savePatientProfile = asyncHandler(async (req, res) => {
     try {
       console.log("REQUEST BODY:", req.body); // debug
 
@@ -19,7 +22,6 @@ class PatientDetailsController {
       }
 
       /* ================= SERVICE ================= */
-      // CALL METHOD, NOT THE INSTANCE
       const { user, profile } =
         await patientProfileService.savePatientProfile(req.body);
 
@@ -43,7 +45,8 @@ class PatientDetailsController {
         },
       });
     }
-  }
+  });
+
 }
 
 module.exports = new PatientDetailsController();

@@ -11,6 +11,7 @@ const AdminUser = sequelize.define('admin_user', {
   middle_name: DataTypes.STRING,
   last_name: DataTypes.STRING,
   email: { type: DataTypes.STRING,field: 'email'},
+  gender: { type: DataTypes.INTEGER, allowNull: true, },
   phone_no: DataTypes.STRING,
   status: { type: DataTypes.ENUM('Active','Inactive'), defaultValue: 'Active' },
   created_on: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
