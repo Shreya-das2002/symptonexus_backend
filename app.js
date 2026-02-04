@@ -13,7 +13,14 @@ require("./models/Doctor");
 sequelize.authenticate()
   .then(() => console.log("DB Connected"))
   .catch(err => console.error("DB Error:", err));
-app.use(cors());
+  
+app.use(cors({
+  origin: "http://localhost:3000", // frontend origin
+  credentials: true,
+  allowedHeaders: ["Content-Type", "Authorization"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+}));
+
 app.use(express.json());
 app.use(responseMiddleware);
 app.use(express.urlencoded({ extended: true }));
