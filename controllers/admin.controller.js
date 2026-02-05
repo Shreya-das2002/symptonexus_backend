@@ -30,23 +30,15 @@ class AdminController {
   });
 
    // GET ALL ADMINS (STATIC + ASYNC + TRY-CATCH)
-static getAllAdmins = async (req, res) => {
-  try {
+/* ===================== GET ALL ADMINS ===================== */
+  static getAllAdmins = asyncHandler(async (req, res) => {
     const admins = await AdminService.getAllAdmins();
 
     return res.status(200).json({
       success: true,
       data: admins
     });
-  } catch (error) {
-    console.error("GET ALL ADMINS ERROR:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error"
-    });
-  }
-};
+  });
   }
 
 
