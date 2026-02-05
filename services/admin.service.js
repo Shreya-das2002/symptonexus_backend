@@ -116,6 +116,25 @@ class AdminService {
     }
   }
 
+ static async getAllAdmins() {
+    return await Admin.findAll({
+      attributes: [
+        "admin_user_id",
+        "first_name",
+        "last_name",
+        "email",
+        "created_on"
+      ],
+      include: [
+        {
+          model: User,
+          as: "user",
+          required: false,   // safe
+          attributes: ["user_type"] // ONLY THIS
+        }
+      ]
+    });
+  }
 }
 
 module.exports = AdminService;

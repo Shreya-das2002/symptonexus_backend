@@ -1,6 +1,8 @@
 const asyncHandler = require("../utils/asyncHandler");
 const AdminService = require("../services/admin.service");
 const admin_user = require("../models/Admin_user");
+const User = require("../models/User");
+const DomainLookup = require("../models/Domain_lookup")
 
 class AdminController {
 
@@ -28,16 +30,25 @@ class AdminController {
   });
 
    // GET ALL ADMINS (STATIC + ASYNC + TRY-CATCH)
-  static async getAllAdmins(req, res) {
-    try {
-      const admins = await admin_user.findAll();
-      res.status(200).json(admins);
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-    }
+static getAllAdmins = async (req, res) => {
+  try {
+    const admins = await AdminService.getAllAdmins();
+
+    return res.status(200).json({
+      success: true,
+      data: admins
+    });
+  } catch (error) {
+    console.error("GET ALL ADMINS ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+  }
+};
   }
 
 
-}
 
 module.exports = AdminController;

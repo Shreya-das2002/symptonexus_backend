@@ -1,5 +1,7 @@
 const sequelize = require("../config/database");
 
+const AdminUser = require("./Admin_user");
+
 const Doctor = require("./Doctor");
 const DoctorDetail = require("./Doctor_Details");
 const DoctorSpecialization = require("./Doctor_specalization");
@@ -16,6 +18,24 @@ const ControlMaster = require("./Control_master");
 const ControlRoleMapping = require("./Control_role_mapping");
 const UserRoleMapping = require("./User_role_mapping");
 
+/* ===== ADMIN USER → USER ===== */
+AdminUser.hasOne(User, {
+  foreignKey: "ref_id",
+  sourceKey: "admin_user_id",
+  as: "user"
+});
+
+User.belongsTo(AdminUser, {
+  foreignKey: "ref_id",
+  targetKey: "admin_user_id",
+  as: "admin"
+});
+
+User.belongsTo(DomainLookup, {
+  foreignKey: "user_type",
+  targetKey: "domain_value",
+  as: "userTypeLookup",
+});
 
 Patient.hasOne(PatientDetails, { foreignKey: "patient_id" });
 PatientDetails.belongsTo(Patient, { foreignKey: "patient_id" });
@@ -67,5 +87,6 @@ module.exports = {
   ControlMaster,
   User,
   ControlRoleMapping,
-  UserRoleMapping
+  UserRoleMapping,
+  AdminUser
 };
