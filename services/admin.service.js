@@ -116,8 +116,11 @@ class AdminService {
     }
   }
 
- static async getAllAdmins() {
-    return await Admin.findAll({
+static async getAllAdmins() {
+  const t = await sequelize.transaction();
+
+  try {
+    const admins = await Admin.findAll({
       attributes: [
         "admin_user_id",
         "first_name",
@@ -129,12 +132,22 @@ class AdminService {
         {
           model: User,
           as: "user",
-          required: false,   // safe
-          attributes: ["user_type"] // ONLY THIS
+          required: false,          // LEFT JOIN (safe)
+          attributes: ["user_type"]
         }
-      ]
+      ],
+      transaction: t
     });
+
+    await t.commit();
+    return admins;
+
+  } catch (error) {
+    await t.rollback();
+    console.error("GET ALL ADMINS ERROR:", error);
+    throw error; // let controller handle response
   }
+}
 }
 
 module.exports = AdminService;
