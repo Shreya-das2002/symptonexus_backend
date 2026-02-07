@@ -32,13 +32,21 @@ class AdminController {
    // GET ALL ADMINS (STATIC + ASYNC + TRY-CATCH)
 /* ===================== GET ALL ADMINS ===================== */
   static getAllAdmins = asyncHandler(async (req, res) => {
+  try {
     const admins = await AdminService.getAllAdmins();
 
     return res.status(200).json({
       success: true,
       data: admins
     });
-  });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to fetch admins"
+    });
+  }
+});
   }
 
 
