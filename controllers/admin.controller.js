@@ -29,25 +29,32 @@ class AdminController {
     }
   });
 
-   // GET ALL ADMINS (STATIC + ASYNC + TRY-CATCH)
-/* ===================== GET ALL ADMINS ===================== */
-  static getAllAdmins = asyncHandler(async (req, res) => {
-  try {
-    const admins = await AdminService.getAllAdmins();
+ /* ===================== GET ALL ADMINS ===================== */
+static getAllAdmins = asyncHandler(async (req, res) => {
 
-    return res.status(200).json({
-      success: true,
-      data: admins
-    });
+  try {
+
+    const result = await AdminService.getAllAdmins();
+
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+
+    return res.status(200).json(result);
 
   } catch (error) {
+
+    console.error("GET ALL ADMINS CONTROLLER ERROR:", error);
+
     return res.status(500).json({
       success: false,
       message: error.message || "Failed to fetch admins"
     });
+
   }
+
 });
-  }
+}
 
 
 

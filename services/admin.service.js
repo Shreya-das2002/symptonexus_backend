@@ -210,56 +210,6 @@ class AdminService {
 
 
   /* =====================================================
-     AUTO SYNC ROLE MAPPING FOR ALL USERS
-  ===================================================== */
-
-  static async syncAllRoleMappings() {
-
-    try {
-
-      const users = await User.findAll();
-
-      for (const user of users) {
-
-        if (!user.user_type) continue;
-
-        await UserRoleMapping.upsert({
-
-          user_id: user.user_id,
-          role_id: user.user_type,
-          status: 1
-
-        });
-
-      }
-
-      return {
-
-        success: true,
-        message: "All role mappings synced successfully"
-
-      };
-
-    }
-
-    catch (error) {
-
-      console.error(error);
-
-      return {
-
-        success: false,
-        message: error.message
-
-      };
-
-    }
-
-  }
-
-
-
-  /* =====================================================
      GET ALL ADMINS WITH PERMANENT ROLE FIX
   ===================================================== */
 
@@ -286,16 +236,24 @@ class AdminService {
           attributes: ["user_id", "user_type"],
 
           where: {
-            user_type: [2, 3]  // ✅ FILTER ONLY ADMINS
+            user_type: [1, 2, 3]  // FILTER ONLY ADMINS
           },
 
-          include: [
-            {
-              model: Role,
-              as: "roles",
-              attributes: ["role_id", "role_name"]
-            }
-          ]
+           include: [
+      {
+        model: UserRoleMapping,
+        as: "UserRoleMappings",
+        attributes: ["role_id"],
+
+        include: [
+          {
+            model: Role,
+            as: "Role",
+            attributes: ["role_id", "role_name"]
+          }
+        ]
+      }
+    ]
         }
       ]
 
@@ -312,7 +270,7 @@ class AdminService {
       email: admin.email,
       phone_no: admin.phone_no,
 
-      role: admin.user?.roles?.[0]?.role_name || "Unknown",
+      role: admin.user?.UserRoleMappings?.[0]?.Role?.role_name || "Unknown",
 
       created_on: admin.created_on
 
