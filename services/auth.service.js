@@ -94,10 +94,10 @@ static async login(email, password, roleFromUI) {
       },
 
       include: [{
-        model: Role,
-        attributes: ["role_id", "role_name"]
-      }],
-
+    model: Role,
+    as: "Role",   // REQUIRED FIX
+    attributes: ["role_id", "role_name"]
+  }],
       transaction: t
 
     });
