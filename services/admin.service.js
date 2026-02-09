@@ -7,14 +7,14 @@ const User = require("../models/User");
 const Admin = require("../models/Admin_user");
 const DomainLookup = require("../models/Domain_lookup");
 
-const Role = require("../models/Role"); // ✅ REQUIRED
-const UserRoleMapping = require("../models/User_role_mapping"); // ✅ REQUIRED
+const Role = require("../models/Role");
+const UserRoleMapping = require("../models/User_role_mapping");
 
 
 class AdminService {
 
   /* =====================================================
-     CREATE ADMIN
+     CREATE ADMIN (ONLY ROLE 2 AND 3 ALLOWED)
   ===================================================== */
 
   static async createAdmin(payload, createdBy = null) {
@@ -29,14 +29,27 @@ class AdminService {
         last_name,
         email,
         phone_no,
-        admin_type,   // role_id (1,2,3)
+        admin_type,
         gender,
         password
       } = payload;
 
 
+      /* ===== RESTRICT ROLE CREATION ===== */
 
-      /* ================= CHECK EMAIL EXISTS ================= */
+      if (![2, 3].includes(admin_type)) {
+
+        await t.rollback();
+
+        return {
+          success: false,
+          message: "Super Admin can create only Standard Admin or Guest Admin"
+        };
+
+      }
+
+
+      /* ===== CHECK EMAIL EXISTS ===== */
 
       const userExists = await User.findOne({
 
@@ -57,12 +70,10 @@ class AdminService {
       }
 
 
+      /* ===== GET ROLE ===== */
 
-      /* ================= GET ROLE ================= */
+      const role = await Role.findByPk(admin_type, {
 
-      const role = await Role.findOne({
-
-        where: { role_id: admin_type },
         transaction: t
 
       });
@@ -73,14 +84,13 @@ class AdminService {
 
         return {
           success: false,
-          message: "Invalid admin role"
+          message: "Invalid role"
         };
 
       }
 
 
-
-      /* ================= GET GENDER ================= */
+      /* ===== GET GENDER ===== */
 
       let genderId = null;
 
@@ -97,24 +107,12 @@ class AdminService {
 
         });
 
-        if (!genderLookup) {
-
-          await t.rollback();
-
-          return {
-            success: false,
-            message: "Invalid gender"
-          };
-
-        }
-
-        genderId = genderLookup.domain_lookup_id;
+        genderId = genderLookup?.domain_lookup_id || null;
 
       }
 
 
-
-      /* ================= CREATE ADMIN PROFILE ================= */
+      /* ===== CREATE ADMIN PROFILE ===== */
 
       const admin = await Admin.create({
 
@@ -130,8 +128,7 @@ class AdminService {
       }, { transaction: t });
 
 
-
-      /* ================= CREATE USER LOGIN ================= */
+      /* ===== CREATE USER LOGIN ===== */
 
       const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -139,7 +136,7 @@ class AdminService {
 
         user_name: email,
         password: hashedPassword,
-        user_type: role.role_id,     // keep for compatibility
+        user_type: role.role_id,
         ref_id: admin.admin_user_id,
         status: "Active",
         created_by: createdBy
@@ -147,10 +144,9 @@ class AdminService {
       }, { transaction: t });
 
 
+      /* ===== PERMANENT ROLE SYNC (UPSERT) ===== */
 
-      /* ================= ASSIGN ROLE (CRITICAL) ================= */
-
-      await UserRoleMapping.create({
+      await UserRoleMapping.upsert({
 
         user_id: newUser.user_id,
         role_id: role.role_id,
@@ -159,14 +155,10 @@ class AdminService {
       }, { transaction: t });
 
 
-
-      /* ================= COMMIT ================= */
-
       await t.commit();
 
 
-
-      /* ================= RESPONSE ================= */
+      /* ===== RESPONSE ===== */
 
       return {
 
@@ -207,10 +199,8 @@ class AdminService {
       console.error("CREATE ADMIN ERROR:", error);
 
       return {
-
         success: false,
         message: error.message
-
       };
 
     }
@@ -218,11 +208,12 @@ class AdminService {
   }
 
 
+
   /* =====================================================
-     OPTIONAL FIX FOR OLD USERS
+     AUTO SYNC ROLE MAPPING FOR ALL USERS
   ===================================================== */
 
-  static async fixMissingRoleMappings() {
+  static async syncAllRoleMappings() {
 
     try {
 
@@ -230,30 +221,22 @@ class AdminService {
 
       for (const user of users) {
 
-        const exists = await UserRoleMapping.findOne({
+        if (!user.user_type) continue;
 
-          where: { user_id: user.user_id }
+        await UserRoleMapping.upsert({
+
+          user_id: user.user_id,
+          role_id: user.user_type,
+          status: 1
 
         });
-
-        if (!exists && user.user_type) {
-
-          await UserRoleMapping.create({
-
-            user_id: user.user_id,
-            role_id: user.user_type,
-            status: 1
-
-          });
-
-        }
 
       }
 
       return {
 
         success: true,
-        message: "Missing role mappings fixed"
+        message: "All role mappings synced successfully"
 
       };
 
@@ -273,6 +256,88 @@ class AdminService {
     }
 
   }
+
+
+
+  /* =====================================================
+     GET ALL ADMINS WITH PERMANENT ROLE FIX
+  ===================================================== */
+
+  static async getAllAdmins() {
+
+  try {
+
+    const admins = await Admin.findAll({
+
+      attributes: [
+        "admin_user_id",
+        "first_name",
+        "middle_name",
+        "last_name",
+        "email",
+        "phone_no",
+        "created_on"
+      ],
+
+      include: [
+        {
+          model: User,
+          as: "user",
+          attributes: ["user_id", "user_type"],
+
+          where: {
+            user_type: [2, 3]  // ✅ FILTER ONLY ADMINS
+          },
+
+          include: [
+            {
+              model: Role,
+              as: "roles",
+              attributes: ["role_id", "role_name"]
+            }
+          ]
+        }
+      ]
+
+    });
+
+    const result = admins.map(admin => ({
+
+      admin_user_id: admin.admin_user_id,
+
+      first_name: admin.first_name,
+      middle_name: admin.middle_name,
+      last_name: admin.last_name,
+
+      email: admin.email,
+      phone_no: admin.phone_no,
+
+      role: admin.user?.roles?.[0]?.role_name || "Unknown",
+
+      created_on: admin.created_on
+
+    }));
+
+
+    return {
+      success: true,
+      data: result
+    };
+
+  }
+
+  catch (error) {
+
+    console.error(error);
+
+    return {
+      success: false,
+      message: error.message
+    };
+
+  }
+
+}
 
 }
 

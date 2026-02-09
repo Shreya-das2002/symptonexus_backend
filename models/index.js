@@ -43,7 +43,17 @@ User.belongsTo(AdminUser, {
   as: "admin"
 });
 
+User.belongsTo(Role, {
+  foreignKey: "user_type",
+  targetKey: "role_id",
+  as: "role"
+});
 
+Role.hasMany(User, {
+  foreignKey: "user_type",
+  sourceKey: "role_id",
+  as: "user"
+});
 /* =====================================================
    USER → DOMAIN LOOKUP (USER TYPE)
 ===================================================== */
