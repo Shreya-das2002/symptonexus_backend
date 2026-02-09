@@ -31,11 +31,44 @@ class AdminService {
         phone_no,
         admin_type,
         gender,
-        password
+        password,
+        confirm_password,
       } = payload;
 
 
-      /* ===== RESTRICT ROLE CREATION ===== */
+      /* =====================================================
+         REQUIRED FIELD VALIDATION
+      ===================================================== */
+
+      if (!first_name || !email || !password || !confirm_password || !admin_type) {
+
+        await t.rollback();
+
+        return {
+          success: false,
+          message: "Required fields missing"
+        };
+      }
+
+
+      /* =====================================================
+         PASSWORD MATCH VALIDATION
+      ===================================================== */
+
+      if (password !== confirm_password) {
+
+        await t.rollback();
+
+        return {
+          success: false,
+          message: "Password and confirm password do not match"
+        };
+      }
+
+
+      /* =====================================================
+         RESTRICT ROLE CREATION
+      ===================================================== */
 
       if (![2, 3].includes(admin_type)) {
 
@@ -45,17 +78,16 @@ class AdminService {
           success: false,
           message: "Super Admin can create only Standard Admin or Guest Admin"
         };
-
       }
 
 
-      /* ===== CHECK EMAIL EXISTS ===== */
+      /* =====================================================
+         CHECK EMAIL EXISTS
+      ===================================================== */
 
       const userExists = await User.findOne({
-
         where: { user_name: email },
         transaction: t
-
       });
 
       if (userExists) {
@@ -66,16 +98,15 @@ class AdminService {
           success: false,
           message: "Email already exists"
         };
-
       }
 
 
-      /* ===== GET ROLE ===== */
+      /* =====================================================
+         GET ROLE
+      ===================================================== */
 
       const role = await Role.findByPk(admin_type, {
-
         transaction: t
-
       });
 
       if (!role) {
@@ -86,11 +117,12 @@ class AdminService {
           success: false,
           message: "Invalid role"
         };
-
       }
 
 
-      /* ===== GET GENDER ===== */
+      /* =====================================================
+         GET GENDER LOOKUP ID
+      ===================================================== */
 
       let genderId = null;
 
@@ -108,57 +140,84 @@ class AdminService {
         });
 
         genderId = genderLookup?.domain_lookup_id || null;
-
       }
 
 
-      /* ===== CREATE ADMIN PROFILE ===== */
+      /* =====================================================
+         CREATE ADMIN PROFILE
+      ===================================================== */
 
       const admin = await Admin.create({
 
         first_name,
         middle_name,
         last_name,
+
         email,
         phone_no,
+
         gender: genderId,
+
         status: "Active",
+
         created_by: createdBy
 
       }, { transaction: t });
 
 
-      /* ===== CREATE USER LOGIN ===== */
+      /* =====================================================
+         HASH PASSWORD
+      ===================================================== */
 
       const hashedPassword = await bcrypt.hash(password, 10);
+
+
+      /* =====================================================
+         CREATE USER LOGIN
+      ===================================================== */
 
       const newUser = await User.create({
 
         user_name: email,
+
         password: hashedPassword,
+
         user_type: role.role_id,
+
         ref_id: admin.admin_user_id,
+
         status: "Active",
+
         created_by: createdBy
 
       }, { transaction: t });
 
 
-      /* ===== PERMANENT ROLE SYNC (UPSERT) ===== */
+      /* =====================================================
+         CREATE USER ROLE MAPPING (UPSERT)
+      ===================================================== */
 
       await UserRoleMapping.upsert({
 
         user_id: newUser.user_id,
+
         role_id: role.role_id,
+
         status: 1
 
       }, { transaction: t });
 
 
+      /* =====================================================
+         COMMIT TRANSACTION
+      ===================================================== */
+
       await t.commit();
 
 
-      /* ===== RESPONSE ===== */
+      /* =====================================================
+         SUCCESS RESPONSE
+      ===================================================== */
 
       return {
 
@@ -177,11 +236,13 @@ class AdminService {
           last_name: admin.last_name,
 
           email: admin.email,
+
           phone_no: admin.phone_no,
 
           gender: gender || null,
 
           role_id: role.role_id,
+
           role: role.role_name,
 
           created_on: admin.created_on
@@ -199,8 +260,11 @@ class AdminService {
       console.error("CREATE ADMIN ERROR:", error);
 
       return {
+
         success: false,
+
         message: error.message
+
       };
 
     }
@@ -210,92 +274,110 @@ class AdminService {
 
 
   /* =====================================================
-     GET ALL ADMINS WITH PERMANENT ROLE FIX
+     GET ALL ADMINS
   ===================================================== */
 
   static async getAllAdmins() {
 
-  try {
+    try {
 
-    const admins = await Admin.findAll({
+      const admins = await Admin.findAll({
 
-      attributes: [
-        "admin_user_id",
-        "first_name",
-        "middle_name",
-        "last_name",
-        "email",
-        "phone_no",
-        "created_on"
-      ],
-
-      include: [
-        {
-          model: User,
-          as: "user",
-          attributes: ["user_id", "user_type"],
-
-          where: {
-            user_type: [1, 2, 3]  // FILTER ONLY ADMINS
-          },
-
-           include: [
-      {
-        model: UserRoleMapping,
-        as: "UserRoleMappings",
-        attributes: ["role_id"],
+        attributes: [
+          "admin_user_id",
+          "first_name",
+          "middle_name",
+          "last_name",
+          "email",
+          "phone_no",
+          "created_on"
+        ],
 
         include: [
           {
-            model: Role,
-            as: "Role",
-            attributes: ["role_id", "role_name"]
+            model: User,
+            as: "user",
+
+            attributes: ["user_id", "user_type"],
+
+            where: {
+              user_type: [1, 2, 3]
+            },
+
+            include: [
+              {
+                model: UserRoleMapping,
+                as: "UserRoleMappings",
+
+                attributes: ["role_id"],
+
+                include: [
+                  {
+                    model: Role,
+                    as: "Role",
+
+                    attributes: ["role_id", "role_name"]
+                  }
+                ]
+              }
+            ]
           }
         ]
-      }
-    ]
-        }
-      ]
 
-    });
-
-    const result = admins.map(admin => ({
-
-      admin_user_id: admin.admin_user_id,
-
-      first_name: admin.first_name,
-      middle_name: admin.middle_name,
-      last_name: admin.last_name,
-
-      email: admin.email,
-      phone_no: admin.phone_no,
-
-      role: admin.user?.UserRoleMappings?.[0]?.Role?.role_name || "Unknown",
-
-      created_on: admin.created_on
-
-    }));
+      });
 
 
-    return {
-      success: true,
-      data: result
-    };
+      /* =====================================================
+         FORMAT RESPONSE
+      ===================================================== */
+
+      const result = admins.map(admin => ({
+
+        admin_user_id: admin.admin_user_id,
+
+        first_name: admin.first_name,
+        middle_name: admin.middle_name,
+        last_name: admin.last_name,
+
+        email: admin.email,
+
+        phone_no: admin.phone_no,
+
+        role:
+          admin.user?.UserRoleMappings?.[0]?.Role?.role_name
+          || "Unknown",
+
+        created_on: admin.created_on
+
+      }));
+
+
+      return {
+
+        success: true,
+
+        data: result
+
+      };
+
+    }
+
+    catch (error) {
+
+      console.error("GET ADMINS ERROR:", error);
+
+      return {
+
+        success: false,
+
+        message: error.message
+
+      };
+
+    }
 
   }
 
-  catch (error) {
-
-    console.error(error);
-
-    return {
-      success: false,
-      message: error.message
-    };
-
-  }
-
-}
 
 }
 
