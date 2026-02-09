@@ -87,7 +87,7 @@ class AdminService {
         user_name: email,
         password: hashedPassword,
         user_type: admin_type,
-        ref_id: admin.admin_user_id,   // ✅ FIXED
+        ref_id: admin.admin_user_id,   // FIXED
         status: "Active",
         created_by: createdBy
       }, { transaction: t });
