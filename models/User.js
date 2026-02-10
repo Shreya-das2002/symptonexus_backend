@@ -24,7 +24,7 @@ const User = sequelize.define('user', {
   },
 
   status: {
-    type: DataTypes.ENUM('Active', 'Inactive'),
+    type: DataTypes.ENUM('Active', 'Pending' , 'Inactive'),
     defaultValue: 'Active'
   },
   
@@ -48,6 +48,5 @@ const User = sequelize.define('user', {
   tableName: 'user'   
 });
 
-sequelize.sync();
 
 module.exports = User;
