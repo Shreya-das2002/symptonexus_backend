@@ -210,9 +210,15 @@ class DoctorService {
       return {
 
         success: true,
-        message: "Doctor created successfully",
+        message: "Doctor created successfully and pending for approval",
         data: {
           doctor_id: doctor.doctor_id,
+          first_name: doctor.first_name,
+          middle_name: doctor.middle_name,
+          last_name: doctor.last_name,
+          phone_no: doctor.phone_no,
+          gender: gender || null,
+          specialization: specialization || null,
           email: doctor.email,
           status: doctor.status
         }
