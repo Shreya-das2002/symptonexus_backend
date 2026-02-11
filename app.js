@@ -24,7 +24,6 @@ app.use(cors({
 
 app.use(express.json());
 app.use(responseMiddleware); 
-app.use(authMiddleware);  
 app.use(express.urlencoded({ extended: true }));
 
 
