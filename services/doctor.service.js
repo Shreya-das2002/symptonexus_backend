@@ -13,6 +13,8 @@ const DomainLookup = require("../models/Domain_lookup");
 
 class DoctorService {
 
+  /*For doctor create*/
+
   static async createDoctor(payload, createdBy = null) {
 
     const t = await sequelize.transaction();
@@ -241,6 +243,137 @@ class DoctorService {
     }
 
   }
+
+  /* =====================================================
+     GET PENDING DOCTORS (FIXED)
+  ===================================================== */
+
+  static async getPendingDoctors() {
+
+    try {
+
+      const doctors = await Doctor.findAll({
+
+        where: {
+          status: "Pending"
+        },
+
+        attributes: [
+          "doctor_id",
+          "first_name",
+          "middle_name",
+          "last_name",
+          "email",
+          "phone_no",
+          "status",
+          "created_on"
+        ],
+
+        include: [
+
+  {
+    model: DoctorDetails,
+    as: "doctor_detail",
+
+    include: [
+      {
+        model: DomainLookup,
+        as: "genderLookup",
+
+        attributes: ["domain_value", "domain_name"],
+
+        where: {
+          domain_type: "gender"
+        },
+
+        required: false
+      }
+    ]
+  },
+
+  {
+    model: DoctorSpecialization,
+    as: "doctor_specializations",
+
+    include: [
+      {
+        model: DomainLookup,
+        as: "specializationLookup",
+
+        attributes: ["domain_value", "domain_name"],
+
+        where: {
+          domain_type: "specialization"
+        },
+
+        required: false
+      }
+    ]
+  }
+
+]
+
+
+      });
+
+
+      /* FORMAT RESPONSE */
+
+      const result = doctors.map(doc => ({
+
+        doctor_id: doc.doctor_id,
+
+        first_name: doc.first_name,
+
+        middle_name: doc.middle_name,
+
+        last_name: doc.last_name,
+
+        email: doc.email,
+
+        phone_no: doc.phone_no,
+
+        gender:
+          doc.doctor_detail?.genderLookup?.domain_name || null,
+
+        specialization:
+            doc.doctor_specializations?.[0]?.specializationLookup?.domain_name || null,
+
+        status: doc.status,
+
+        created_on: doc.created_on
+
+      }));
+
+
+
+      return {
+
+        success: true,
+
+        data: result
+
+      };
+
+
+    }
+
+    catch (error) {
+
+      console.error("GET PENDING DOCTORS ERROR:", error);
+
+      return {
+
+        success: false,
+
+        message: error.message
+
+      };
+
+    }
+
+  }
+
 
 }
 

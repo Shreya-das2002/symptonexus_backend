@@ -60,6 +60,67 @@ class DoctorController {
     }
   });
 
+  /* =====================================================
+     GET PENDING DOCTORS
+  ===================================================== */
+  static getPendingDoctors = asyncHandler(async (req, res) => {
+
+    try {
+
+      const result =
+        await DoctorService.getPendingDoctors();
+
+      // Defensive check
+      if (!result || typeof result.success !== "boolean") {
+
+        return res.sendResponse(
+          res.STATUS.INTERNAL_SERVER_ERROR,
+          "Invalid server response",
+          {},
+          "INVALID_RESPONSE"
+        );
+
+      }
+
+      // Business failure
+      if (!result.success) {
+
+        return res.sendResponse(
+          res.STATUS.BUSINESS_ERROR,
+          result.message || "Failed to fetch pending doctors",
+          {},
+          result.errorCode || "BUSINESS_ERROR",
+          false
+        );
+
+      }
+
+      // Success
+      return res.sendResponse(
+        res.STATUS.SUCCESS,
+        result.message || "Pending doctors fetched successfully",
+        result.data || [],
+        null,
+        true
+      );
+
+    }
+    catch (error) {
+
+      console.error("GET PENDING DOCTORS ERROR:", error);
+
+      return res.sendResponse(
+        res.STATUS.INTERNAL_SERVER_ERROR,
+        "Something went wrong. Please try again later.",
+        {},
+        "SERVER_ERROR"
+      );
+
+    }
+
+  });
+
+
 }
 
 module.exports = DoctorController;

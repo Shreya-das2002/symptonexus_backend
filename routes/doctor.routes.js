@@ -6,5 +6,6 @@ const DoctorController = require("../controllers/doctor.controller");
 
 // CREATE DOCTOR
 router.post("/create", DoctorController.createDoctor);
+router.get("/pending-doctors", DoctorController.getPendingDoctors);
 
 module.exports = router;

@@ -64,7 +64,17 @@ User.belongsTo(DomainLookup, {
   as: "userTypeLookup"
 });
 
+DoctorDetail.belongsTo(DomainLookup, {
+  foreignKey: "gender",
+  targetKey: "domain_value",
+  as: "genderLookup"
+});
 
+DoctorSpecialization.belongsTo(DomainLookup, {
+  foreignKey: "specialization_id",
+  targetKey: "domain_value",
+  as: "specializationLookup"
+});
 /* =====================================================
    PATIENT RELATIONS
 ===================================================== */

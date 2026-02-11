@@ -250,7 +250,26 @@ static async login(email, password, roleFromUI) {
 
     });
 
+/* ================= LOAD BUTTONS ================= */
 
+const buttons = await ControlMaster.findAll({
+
+  include: [{
+    model: ControlRoleMapping,
+    where: { role_id: role_id },
+    attributes: []
+  }],
+
+  where: {
+    control_type: "button",
+    status: "Active"
+  },
+
+  order: [["control_master_id", "ASC"]],
+
+  transaction: t
+
+});
 
     /* ================= BUILD USER DATA ================= */
 
@@ -362,7 +381,8 @@ static async login(email, password, roleFromUI) {
         token,
         role,
         user: userData,
-        menus
+        menus,
+        buttons
 
       }
 
