@@ -373,6 +373,93 @@ class DoctorService {
     }
 
   }
+  /* Doctor status Update */ 
+
+static async updateDoctorStatus(doctorId, status, updatedBy) {
+
+  const t = await sequelize.transaction();
+
+  try {
+
+    const doctor = await Doctor.findByPk(doctorId, { transaction: t });
+
+    if (!doctor) {
+
+      await t.rollback();
+
+      return {
+        success: false,
+        message: "Doctor not found"
+      };
+
+    }
+
+    let doctorNo = doctor.doctor_no;
+
+    /* GENERATE DOCTOR NUMBER ONLY WHEN ACCEPTED */
+
+    if (status === "Active" && !doctorNo) {
+
+      const nextId = doctor.doctor_id.toString().padStart(4, "0");
+
+      doctorNo = `DOC${nextId}`;
+
+    }
+
+    /* UPDATE DOCTOR */
+
+    await doctor.update({
+
+      status,
+      doctor_no: doctorNo,
+      updated_by: updatedBy
+
+    }, { transaction: t });
+
+
+    /* UPDATE USER STATUS */
+
+    await User.update(
+
+      { status },
+
+      {
+        where: { ref_id: doctorId },
+        transaction: t
+      }
+
+    );
+
+
+    await t.commit();
+
+    return {
+
+      success: true,
+      message: `Doctor ${status} successfully`,
+      data: {
+      doctor_no: doctorNo || null,
+      first_name: doctor.first_name,
+      middle_name: doctor.middle_name,
+      last_name: doctor.last_name,
+      email: doctor.email,
+      status: doctor.status
+      }
+    };
+
+  }
+  catch (error) {
+
+    await t.rollback();
+
+    return {
+      success: false,
+      message: error.message
+    };
+
+  }
+
+}
 
 
 }

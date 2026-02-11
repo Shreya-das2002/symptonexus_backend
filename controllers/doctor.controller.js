@@ -120,6 +120,36 @@ class DoctorController {
 
   });
 
+  /* Update Status */
+
+  static updateDoctorStatus = asyncHandler(async (req, res) => {
+
+  const { doctor_id, status } = req.body;
+
+  const updatedBy = req.user.user_id;
+
+  const result = await DoctorService.updateDoctorStatus(
+    doctor_id,
+    status,
+    updatedBy
+  );
+
+  if (!result.success) {
+
+    return res.sendResponse(
+      res.STATUS.BUSINESS_ERROR,
+      result.message
+    );
+
+  }
+
+  return res.sendResponse(
+    res.STATUS.SUCCESS,
+    result.message,
+    result
+  );
+
+});
 
 }
 

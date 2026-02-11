@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require("cors");
 const app = express();
 const responseMiddleware = require("./middlewares/response.middleware");
+const authMiddleware = require("./middlewares/auth.middleware");
 
 const { sequelize, Patient, PatientDetails } = require("./models");
 
@@ -22,7 +23,8 @@ app.use(cors({
 }));
 
 app.use(express.json());
-app.use(responseMiddleware);
+app.use(responseMiddleware); 
+app.use(authMiddleware);  
 app.use(express.urlencoded({ extended: true }));
 
 

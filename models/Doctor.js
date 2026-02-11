@@ -20,7 +20,7 @@ const Doctor = sequelize.define('doctor', {
     phone_no: DataTypes.STRING,
 
     status: {
-        type: DataTypes.ENUM('Active', 'Pending', 'Inactive'),
+        type: DataTypes.ENUM('Active', 'Pending', 'Rejected', 'Inactive'),
         allowNull: false,
         defaultValue: 'Pending'
     },
