@@ -17,259 +17,210 @@ class AdminService {
      CREATE ADMIN (ONLY ROLE 2 AND 3 ALLOWED)
   ===================================================== */
 
-  static async createAdmin(payload, createdBy = null) {
-
-    const t = await sequelize.transaction();
-
-    try {
-
-      const {
-        first_name,
-        middle_name,
-        last_name,
-        email,
-        phone_no,
-        admin_type,
-        gender,
-        password,
-        confirm_password,
-      } = payload;
-
-
-      /* =====================================================
-         REQUIRED FIELD VALIDATION
-      ===================================================== */
-
-      if (!first_name || !email || !password || !confirm_password || !admin_type) {
-
-        await t.rollback();
-
-        return {
-          success: false,
-          message: "Required fields missing"
-        };
-      }
-
-
-      /* =====================================================
-         PASSWORD MATCH VALIDATION
-      ===================================================== */
-
-      if (password !== confirm_password) {
-
-        await t.rollback();
-
-        return {
-          success: false,
-          message: "Password and confirm password do not match"
-        };
-      }
-
-
-      /* =====================================================
-         RESTRICT ROLE CREATION
-      ===================================================== */
-
-      if (![2, 3].includes(admin_type)) {
-
-        await t.rollback();
-
-        return {
-          success: false,
-          message: "Super Admin can create only Standard Admin or Guest Admin"
-        };
-      }
-
-
-      /* =====================================================
-         CHECK EMAIL EXISTS
-      ===================================================== */
-
-      const userExists = await User.findOne({
-        where: { user_name: email },
-        transaction: t
-      });
-
-      if (userExists) {
-
-        await t.rollback();
-
-        return {
-          success: false,
-          message: "Email already exists"
-        };
-      }
-
-
-      /* =====================================================
-         GET ROLE
-      ===================================================== */
-
-      const role = await Role.findByPk(admin_type, {
-        transaction: t
-      });
-
-      if (!role) {
-
-        await t.rollback();
-
-        return {
-          success: false,
-          message: "Invalid role"
-        };
-      }
-
-
-      /* =====================================================
-         GET GENDER LOOKUP ID
-      ===================================================== */
-
-      let genderId = null;
-
-      if (gender) {
-
-        const genderLookup = await DomainLookup.findOne({
-
-          where: {
-            domain_type: "gender",
-            domain_value: gender
-          },
-
-          transaction: t
-
-        });
-
-        genderId = genderLookup?.domain_lookup_id || null;
-      }
-
-
-      /* =====================================================
-         CREATE ADMIN PROFILE
-      ===================================================== */
-
-      const admin = await Admin.create({
-
-        first_name,
-        middle_name,
-        last_name,
-
-        email,
-        phone_no,
-
-        gender: genderId,
-
-        status: "Active",
-
-        created_by: createdBy
-
-      }, { transaction: t });
-
-
-      /* =====================================================
-         HASH PASSWORD
-      ===================================================== */
-
-      const hashedPassword = await bcrypt.hash(password, 10);
-
-
-      /* =====================================================
-         CREATE USER LOGIN
-      ===================================================== */
-
-      const newUser = await User.create({
-
-        user_name: email,
-
-        password: hashedPassword,
-
-        user_type: role.role_id,
-
-        ref_id: admin.admin_user_id,
-
-        status: "Active",
-
-        created_by: createdBy
-
-      }, { transaction: t });
-
-
-      /* =====================================================
-         CREATE USER ROLE MAPPING (UPSERT)
-      ===================================================== */
-
-      await UserRoleMapping.upsert({
-
-        user_id: newUser.user_id,
-
-        role_id: role.role_id,
-
-        status: 1
-
-      }, { transaction: t });
-
-
-      /* =====================================================
-         COMMIT TRANSACTION
-      ===================================================== */
-
-      await t.commit();
-
-
-      /* =====================================================
-         SUCCESS RESPONSE
-      ===================================================== */
-
-      return {
-
-        success: true,
-
-        message: "Admin created successfully",
-
-        data: {
-
-          user_id: newUser.user_id,
-
-          admin_user_id: admin.admin_user_id,
-
-          first_name: admin.first_name,
-          middle_name: admin.middle_name,
-          last_name: admin.last_name,
-
-          email: admin.email,
-
-          phone_no: admin.phone_no,
-
-          gender: gender || null,
-
-          role_id: role.role_id,
-
-          role: role.role_name,
-
-          created_on: admin.created_on
-
-        }
-
-      };
-
-    }
-
-    catch (error) {
+static async createAdmin(payload, createdBy = null) {
+
+  const t = await sequelize.transaction();
+
+  try {
+
+    const {
+      first_name,
+      middle_name,
+      last_name,
+      email,
+      phone_no,
+      admin_type,
+      gender,
+      password,
+      confirm_password,
+    } = payload;
+
+    /* VALIDATIONS */
+
+    if (!first_name || !email || !password || !confirm_password || !admin_type) {
 
       await t.rollback();
 
-      console.error("CREATE ADMIN ERROR:", error);
-
       return {
-
         success: false,
-
-        message: error.message
-
+        message: "Required fields missing"
       };
 
     }
 
+    if (password !== confirm_password) {
+
+      await t.rollback();
+
+      return {
+        success: false,
+        message: "Password mismatch"
+      };
+
+    }
+
+    if (![2, 3].includes(admin_type)) {
+
+      await t.rollback();
+
+      return {
+        success: false,
+        message: "Invalid admin type"
+      };
+
+    }
+
+    /* CHECK EMAIL */
+
+    const userExists = await User.findOne({
+      where: { user_name: email },
+      transaction: t
+    });
+
+    if (userExists) {
+
+      await t.rollback();
+
+      return {
+        success: false,
+        message: "Email already exists"
+      };
+
+    }
+
+    /* GET ROLE */
+
+    const role = await Role.findByPk(admin_type, {
+      transaction: t
+    });
+
+    /* GET GENDER */
+
+    let genderId = null;
+
+    if (gender) {
+
+      const genderLookup = await DomainLookup.findOne({
+
+        where: {
+          domain_type: "gender",
+          domain_value: gender
+        },
+
+        transaction: t
+
+      });
+
+      genderId = genderLookup?.domain_lookup_id;
+
+    }
+
+    /* CREATE ADMIN */
+
+    const admin = await Admin.create({
+
+      first_name,
+      middle_name,
+      last_name,
+      email,
+      phone_no,
+      gender: genderId,
+      status: "Active",
+      created_by: createdBy
+
+    }, { transaction: t });
+
+    /* CREATE USER */
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = await User.create({
+
+      user_name: email,
+      password: hashedPassword,
+      user_type: role.role_id,
+      ref_id: admin.admin_user_id,
+      status: "Active",
+      created_by: createdBy
+
+    }, { transaction: t });
+
+    /* ROLE MAPPING */
+
+    await UserRoleMapping.create({
+
+      user_id: newUser.user_id,
+      role_id: role.role_id,
+      status: 1
+
+    }, { transaction: t });
+
+    /* COMMIT TRANSACTION */
+
+    await t.commit();
+
+    /* FETCH CREATOR ROLE AFTER COMMIT */
+
+    const creatorRoleMapping = await UserRoleMapping.findOne({
+
+      where: {
+        user_id: createdBy
+      },
+
+      include: [
+        {
+          model: Role,
+          as: "Role",
+          attributes: ["role_name"]
+        }
+      ]
+
+    });
+
+    /* RESPONSE */
+
+    return {
+
+      success: true,
+
+      message: "Admin created successfully",
+
+      data: {
+
+        admin_user_id: admin.admin_user_id,
+
+        first_name: admin.first_name,
+
+        last_name: admin.last_name,
+
+        email: admin.email,
+
+        role: role.role_name,
+
+        created_by: creatorRoleMapping?.Role?.role_name || null
+
+      }
+
+    };
+
   }
+
+  catch (error) {
+
+    if (t && !t.finished) {
+      await t.rollback();
+    }
+
+    console.error("CREATE ADMIN ERROR:", error);
+
+    return {
+      success: false,
+      message: error.message
+    };
+
+  }
+
+}
 
 
 
