@@ -246,135 +246,122 @@ class DoctorService {
 
   }
 
-  /* =====================================================
-     GET PENDING DOCTORS (FIXED)
-  ===================================================== */
+ /* =====================================================
+   GET PENDING DOCTORS
+===================================================== */
 
-  static async getPendingDoctors() {
+static async getPendingDoctors(userId, role) {
 
-    try {
+  try {
 
-      const doctors = await Doctor.findAll({
+    /* Super Admin sees all, others see only their doctors */
 
-        where: {
-          status: "Pending"
-        },
+    let whereCondition = {
+      status: "Pending"
+    };
 
-        attributes: [
-          "doctor_id",
-          "first_name",
-          "middle_name",
-          "last_name",
-          "email",
-          "phone_no",
-          "status",
-          "created_on"
-        ],
-
-        include: [
-
-  {
-    model: DoctorDetails,
-    as: "doctor_detail",
-
-    include: [
-      {
-        model: DomainLookup,
-        as: "genderLookup",
-
-        attributes: ["domain_value", "domain_name"],
-
-        where: {
-          domain_type: "gender"
-        },
-
-        required: false
-      }
-    ]
-  },
-
-  {
-    model: DoctorSpecialization,
-    as: "doctor_specializations",
-
-    include: [
-      {
-        model: DomainLookup,
-        as: "specializationLookup",
-
-        attributes: ["domain_value", "domain_name"],
-
-        where: {
-          domain_type: "specialization"
-        },
-
-        required: false
-      }
-    ]
-  }
-
-]
-
-
-      });
-
-
-      /* FORMAT RESPONSE */
-
-      const result = doctors.map(doc => ({
-
-        doctor_id: doc.doctor_id,
-
-        first_name: doc.first_name,
-
-        middle_name: doc.middle_name,
-
-        last_name: doc.last_name,
-
-        email: doc.email,
-
-        phone_no: doc.phone_no,
-
-        gender:
-          doc.doctor_detail?.genderLookup?.domain_name || null,
-
-        specialization:
-            doc.doctor_specializations?.[0]?.specializationLookup?.domain_name || null,
-
-        status: doc.status,
-
-        created_on: doc.created_on
-
-      }));
-
-
-
-      return {
-
-        success: true,
-
-        data: result
-
-      };
-
-
+    // important fix
+    if (!role || role.toLowerCase() !== "super admin") {
+      whereCondition.created_by = userId;
     }
 
-    catch (error) {
+    const doctors = await Doctor.findAll({
 
-      console.error("GET PENDING DOCTORS ERROR:", error);
+      where: whereCondition,
 
-      return {
+      attributes: [
+        "doctor_id",
+        "first_name",
+        "middle_name",
+        "last_name",
+        "email",
+        "phone_no",
+        "status",
+        "created_on",
+        "created_by"
+      ],
 
-        success: false,
+      include: [
 
-        message: error.message
+        {
+          model: DoctorDetails,
+          as: "doctor_detail",
+          include: [
+            {
+              model: DomainLookup,
+              as: "genderLookup",
+              attributes: ["domain_name"],
+              where: { domain_type: "gender" },   // FIX ADDED
+              required: false
+            }
+          ]
+        },
 
-      };
+        {
+          model: DoctorSpecialization,
+          as: "doctor_specializations",
+         include: [
+            {
+              model: DomainLookup,
+              as: "specializationLookup",
+              attributes: ["domain_name"],
+              where: { domain_type: "specialization" },  // FIX ADDED
+              required: false
+            }
+          ]
+        }
 
-    }
+      ]
+
+    });
+
+    const result = doctors.map(doc => ({
+
+      doctor_id: doc.doctor_id,
+      first_name: doc.first_name,
+      middle_name: doc.middle_name,
+      last_name: doc.last_name,
+      email: doc.email,
+      phone_no: doc.phone_no,
+
+      gender:
+        doc.doctor_detail?.genderLookup?.domain_name || null,
+
+      specialization:
+        doc.doctor_specializations?.[0]?.specializationLookup?.domain_name || null,
+
+      status: doc.status,
+
+      created_on: doc.created_on,
+
+      created_by: doc.created_by
+
+    }));
+
+
+    return {
+
+      success: true,
+      data: result
+
+    };
 
   }
+
+  catch (error) {
+
+    console.error("GET PENDING DOCTORS ERROR:", error);
+
+    return {
+
+      success: false,
+      message: error.message
+
+    };
+
+  }
+
+}
   /* Doctor status Update */ 
 
 static async updateDoctorStatus(doctorId, status, updatedBy) {

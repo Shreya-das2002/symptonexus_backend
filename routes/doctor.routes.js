@@ -7,7 +7,7 @@ const authMiddleware = require("../middlewares/auth.middleware");
 
 // CREATE DOCTOR
 router.post("/create", authMiddleware, DoctorController.createDoctor);
-router.get("/pending-doctors", DoctorController.getPendingDoctors);
+router.get("/pending-doctors", authMiddleware, DoctorController.getPendingDoctors);
 router.put("/update-status", authMiddleware, DoctorController.updateDoctorStatus);
 
 module.exports = router;

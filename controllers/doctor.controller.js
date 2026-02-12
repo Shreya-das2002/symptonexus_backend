@@ -67,8 +67,11 @@ class DoctorController {
 
     try {
 
-      const result =
-        await DoctorService.getPendingDoctors();
+      const result = await DoctorService.getPendingDoctors(
+  req.user.user_id,
+  req.user.role
+);
+
 
       // Defensive check
       if (!result || typeof result.success !== "boolean") {

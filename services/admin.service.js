@@ -185,6 +185,7 @@ static async createAdmin(payload, createdBy = null) {
 
         role: role.role_name,
 
+
         created_by: creatorRole?.role_name || null
 
       }
