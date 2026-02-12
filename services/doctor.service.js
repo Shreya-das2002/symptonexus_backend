@@ -20,6 +20,7 @@ class DoctorService {
     const t = await sequelize.transaction();
 
     try {
+      
 
       const {
         first_name,
@@ -222,7 +223,8 @@ class DoctorService {
           gender: gender || null,
           specialization: specialization || null,
           email: doctor.email,
-          status: doctor.status
+          status: doctor.status,
+          created_by: doctor.created_by
         }
 
       };
