@@ -161,21 +161,9 @@ static async createAdmin(payload, createdBy = null) {
 
     /* FETCH CREATOR ROLE AFTER COMMIT */
 
-    const creatorRoleMapping = await UserRoleMapping.findOne({
-
-      where: {
-        user_id: createdBy
-      },
-
-      include: [
-        {
-          model: Role,
-          as: "Role",
-          attributes: ["role_name"]
-        }
-      ]
-
-    });
+  const creatorRole = await Role.findByPk(createdBy, {
+  attributes: ["role_name"]
+});
 
     /* RESPONSE */
 
@@ -197,7 +185,7 @@ static async createAdmin(payload, createdBy = null) {
 
         role: role.role_name,
 
-        created_by: creatorRoleMapping?.Role?.role_name || null
+        created_by: creatorRole?.role_name || null
 
       }
 

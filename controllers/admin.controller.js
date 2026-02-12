@@ -1,55 +1,62 @@
 const asyncHandler = require("../utils/asyncHandler");
 const AdminService = require("../services/admin.service");
 
+
 class AdminController {
 
-  /* ===================== CREATE ADMIN ===================== */
-  static createAdmin = asyncHandler(async (req, res) => {
+    /* ===================== CREATE ADMIN ===================== */
+ static createAdmin = asyncHandler(async (req, res) => {
 
     try {
 
-      const result = await AdminService.createAdmin(
-        req.body,
-        req.user?.user_id
-      );
+      /* CHECK ONLY SUPER ADMIN CAN CREATE ADMIN */
+      if (req.user.role_id !== 1) {
 
-      // Defensive check
-      if (!result || typeof result.success !== "boolean") {
         return res.sendResponse(
-          res.STATUS.INTERNAL_SERVER_ERROR,
-          "Invalid server response",
+          res.STATUS.UNAUTHORIZED,
+          "Only Super Admin can create admin",
           {},
-          "INVALID_RESPONSE"
+          "UNAUTHORIZED"
         );
+
       }
 
-      // Business error
+      /* PASS SUPER ADMIN ROLE_ID AS created_by */
+      const createdByRoleId = req.user.role_id;
+
+      const result = await AdminService.createAdmin(
+        req.body,
+        createdByRoleId
+      );
+
       if (!result.success) {
+
         return res.sendResponse(
           res.STATUS.BUSINESS_ERROR,
-          result.message || "Failed to create admin",
+          result.message,
           {},
           result.errorCode || "BUSINESS_ERROR",
           false
         );
+
       }
 
-      // Success
       return res.sendResponse(
         res.STATUS.SUCCESS,
-        result.message || "Admin created successfully",
-        result.data || {},
+        result.message,
+        result.data,
         null,
         true
       );
 
-    } catch (error) {
+    }
+    catch (error) {
 
       console.error("CREATE ADMIN CONTROLLER ERROR:", error);
 
       return res.sendResponse(
         res.STATUS.INTERNAL_SERVER_ERROR,
-        "Something went wrong. Please try again later.",
+        "Something went wrong",
         {},
         "SERVER_ERROR"
       );
@@ -57,6 +64,7 @@ class AdminController {
     }
 
   });
+
 
 
   /* ===================== GET ALL ADMINS ===================== */

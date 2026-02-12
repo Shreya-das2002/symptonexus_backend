@@ -341,7 +341,7 @@ const buttons = await ControlMaster.findAll({
     const tokenPayload = {
 
       user_id: user.user_id,
-      role_id,
+      role_id: role.role_id, 
       role
 
     };
