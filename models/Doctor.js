@@ -9,6 +9,12 @@ const Doctor = sequelize.define('doctor', {
         autoIncrement: true
     },
 
+    doctor_no: {
+  type: DataTypes.STRING(20),
+  allowNull: true,
+  unique: true
+},
+
     first_name: DataTypes.STRING,
 
     middle_name: DataTypes.STRING,
