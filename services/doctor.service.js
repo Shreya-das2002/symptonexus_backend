@@ -288,7 +288,6 @@ else if (role && role.toLowerCase() === "standard admin") {
     .split(",")
     .map(id => Number(id.trim()));
 
-  console.log("Admin departments:", specializationFilter);
 
 }
 
