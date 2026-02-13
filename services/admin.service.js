@@ -17,213 +17,235 @@ class AdminService {
      CREATE ADMIN (ONLY ROLE 2 AND 3 ALLOWED)
   ===================================================== */
 
-static async createAdmin(payload, createdBy = null) {
-
-  const t = await sequelize.transaction();
-
-  try {
-
-    const {
-      first_name,
-      middle_name,
-      last_name,
-      email,
-      phone_no,
-      admin_type,
-      department_id,
-      gender,
-      password,
-      confirm_password,
-    } = payload;
-
-    /* VALIDATIONS */
-
-    if (!first_name || !email || !password || !confirm_password || !admin_type) {
-
-      await t.rollback();
-
-      return {
-        success: false,
-        message: "Required fields missing"
-      };
-
-    }
-
-    if (password !== confirm_password) {
-
-      await t.rollback();
-
-      return {
-        success: false,
-        message: "Password mismatch"
-      };
-
-    }
-
-    if (![2, 3].includes(admin_type)) {
-
-      await t.rollback();
-
-      return {
-        success: false,
-        message: "Invalid admin type"
-      };
-
-    }
-
-    if (admin_type == 2 && !department_id) {
-
-  await t.rollback();
-
-  return {
-    success: false,
-    message: "Department is required for Standard Admin"
-  };
-
-}
-
-    /* CHECK EMAIL */
-
-    const userExists = await User.findOne({
-      where: { user_name: email },
-      transaction: t
-    });
-
-    if (userExists) {
-
-      await t.rollback();
-
-      return {
-        success: false,
-        message: "Email already exists"
-      };
-
-    }
-
-    /* GET ROLE */
-
-    const role = await Role.findByPk(admin_type, {
-      transaction: t
-    });
-
-    /* GET GENDER */
-
-    let genderId = null;
-
-    if (gender) {
-
-      const genderLookup = await DomainLookup.findOne({
-
-        where: {
-          domain_type: "gender",
-          domain_value: gender
-        },
-
-        transaction: t
-
-      });
-
-      genderId = genderLookup?.domain_lookup_id;
-
-    }
-
-    /* CREATE ADMIN */
-
-    const admin = await Admin.create({
-
-      first_name,
-      middle_name,
-      last_name,
-      email,
-      phone_no,
-      gender: genderId,
-      department_id: admin_type == 2 ? department_id : null,
-      status: "Active",
-      created_by: createdBy
-
-    }, { transaction: t });
-
-    /* CREATE USER */
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const newUser = await User.create({
-
-      user_name: email,
-      password: hashedPassword,
-      user_type: role.role_id,
-      ref_id: admin.admin_user_id,
-      status: "Active",
-      created_by: createdBy
-
-    }, { transaction: t });
-
-    /* ROLE MAPPING */
-
-    await UserRoleMapping.create({
-
-      user_id: newUser.user_id,
-      role_id: role.role_id,
-      status: 1
-
-    }, { transaction: t });
-
-    /* COMMIT TRANSACTION */
-
-    await t.commit();
-
-    /* FETCH CREATOR ROLE AFTER COMMIT */
-
-  const creatorRole = await Role.findByPk(createdBy, {
-  attributes: ["role_name"]
-});
-
-    /* RESPONSE */
-
-    return {
-
-      success: true,
-
-      message: "Admin created successfully",
-
-      data: {
-
-        admin_user_id: admin.admin_user_id,
-
-        first_name: admin.first_name,
-
-        last_name: admin.last_name,
-
-        email: admin.email,
-
-        role: role.role_name,
-
-
-        created_by: creatorRole?.role_name || null
+  static async createAdmin(payload, createdBy = null) {
+
+    const t = await sequelize.transaction();
+
+    try {
+
+      const {
+        first_name,
+        middle_name,
+        last_name,
+        email,
+        phone_no,
+        admin_type,
+        department_id,
+        gender,
+        password,
+        confirm_password,
+      } = payload;
+
+      /* VALIDATIONS */
+
+      if (!first_name || !email || !password || !confirm_password || !admin_type) {
+
+        await t.rollback();
+
+        return {
+          success: false,
+          message: "Required fields missing"
+        };
 
       }
 
-    };
+      if (password !== confirm_password) {
 
-  }
+        await t.rollback();
 
-  catch (error) {
+        return {
+          success: false,
+          message: "Password mismatch"
+        };
 
-    if (t && !t.finished) {
-      await t.rollback();
+      }
+
+      if (![2, 3].includes(admin_type)) {
+
+        await t.rollback();
+
+        return {
+          success: false,
+          message: "Invalid admin type"
+        };
+
+      }
+
+    if (admin_type == 2 && (!department_id || department_id.length === 0)) {
+
+        await t.rollback();
+
+        return {
+          success: false,
+          message: "Department is required for Standard Admin"
+        };
+
+      }
+
+      /* CHECK EMAIL */
+
+      const userExists = await User.findOne({
+        where: { user_name: email },
+        transaction: t
+      });
+
+      if (userExists) {
+
+        await t.rollback();
+
+        return {
+          success: false,
+          message: "Email already exists"
+        };
+
+      }
+
+      /* GET ROLE */
+
+      const role = await Role.findByPk(admin_type, {
+        transaction: t
+      });
+
+      /* FIX: validate role exists */
+
+      if (!role) {
+
+        await t.rollback();
+
+        return {
+          success: false,
+          message: "Invalid admin role"
+        };
+
+      }
+
+      /* GET GENDER */
+
+      let genderId = null;
+
+      if (gender) {
+
+        const genderLookup = await DomainLookup.findOne({
+
+          where: {
+            domain_type: "gender",
+            domain_value: gender
+          },
+
+          transaction: t
+
+        });
+
+        genderId = genderLookup?.domain_lookup_id || null;
+
+      }
+
+      /* CREATE ADMIN */
+
+      const admin = await Admin.create({
+
+        first_name,
+        middle_name,
+        last_name,
+        email,
+        phone_no,
+        gender: genderId,
+        department_id:
+    admin_type == 2
+      ? department_id.join(",")  
+      : null,
+        status: "Active",
+        created_by: createdBy   // role_id
+
+      }, { transaction: t });
+
+      /* CREATE USER */
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      const newUser = await User.create({
+
+        user_name: email,
+        password: hashedPassword,
+        user_type: role.role_id,
+        ref_id: admin.admin_user_id,
+        status: "Active",
+        created_by: createdBy   // role_id
+
+      }, { transaction: t });
+
+      /* ROLE MAPPING */
+
+      await UserRoleMapping.create({
+
+        user_id: newUser.user_id,
+        role_id: role.role_id,
+        status: 1
+
+      }, { transaction: t });
+
+      /* COMMIT TRANSACTION */
+
+      await t.commit();
+
+      /* FETCH CREATOR ROLE NAME USING role_id */
+
+     let creatorRole = null;
+
+if (createdBy) {
+  creatorRole = await Role.findByPk(createdBy, {
+    attributes: ["role_id", "role_name"]
+  });
+}
+      /* RESPONSE */
+
+      return {
+
+        success: true,
+
+        message: "Admin created successfully",
+
+        data: {
+
+          admin_user_id: admin.admin_user_id,
+
+          first_name: admin.first_name,
+
+          last_name: admin.last_name,
+
+          email: admin.email,
+
+          role: role.role_name,
+
+          department_id:
+  admin.department_id
+    ? admin.department_id.split(",").map(Number)
+    : [],
+
+          created_by: creatorRole?.role_name || null
+
+        }
+
+      };
+
     }
 
-    console.error("CREATE ADMIN ERROR:", error);
+    catch (error) {
 
-    return {
-      success: false,
-      message: error.message
-    };
+      if (t && !t.finished) {
+        await t.rollback();
+      }
+
+      console.error("CREATE ADMIN ERROR:", error);
+
+      return {
+        success: false,
+        message: error.message
+      };
+
+    }
 
   }
-
-}
-
   /* =====================================================
      GET ALL ADMINS
   ===================================================== */
@@ -297,6 +319,11 @@ static async createAdmin(payload, createdBy = null) {
         role:
           admin.user?.UserRoleMappings?.[0]?.Role?.role_name
           || "Unknown",
+
+        department_id:
+    admin.department_id
+      ? admin.department_id.split(",").map(Number)
+      : [],
 
         created_on: admin.created_on
 
