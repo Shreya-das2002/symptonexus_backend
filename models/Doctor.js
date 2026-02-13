@@ -10,9 +10,9 @@ const Doctor = sequelize.define('doctor', {
     },
 
     doctor_no: {
-  type: DataTypes.STRING(20),
-  allowNull: true,
-  unique: true
+        type: DataTypes.STRING(20),
+        allowNull: true,
+        unique: true
 },
 
     first_name: DataTypes.STRING,
