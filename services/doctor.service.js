@@ -513,6 +513,183 @@ static async updateDoctorStatus(doctorId, status, updatedBy) {
 }
 
 
+/* =====================================================
+          GET DOCTOR LIST (ROLE BASED)
+===================================================== */
+
+static async getDoctorList(userId, adminId, role)
+{
+  try {
+
+    let whereCondition = {};
+
+    let specializationFilter = null;
+
+
+    /* SUPER ADMIN → SEE ALL DOCTORS */
+
+    if (role && role.toLowerCase() === "super admin")
+    {
+      // no filter
+    }
+
+
+    /* STANDARD ADMIN → SEE ONLY ACTIVE + THEIR DEPARTMENT */
+
+    else if (role && role.toLowerCase() === "standard admin")
+    {
+
+      whereCondition.status = "Active";
+
+      const admin = await Admin.findByPk(adminId);
+
+      if (!admin || !admin.department_id)
+      {
+        return {
+          success: true,
+          data: []
+        };
+      }
+
+      specializationFilter =
+        admin.department_id
+        .split(",")
+        .map(id => Number(id.trim()));
+
+    }
+
+
+
+
+    /* FETCH DOCTORS */
+
+    const doctors = await Doctor.findAll({
+
+      where: whereCondition,
+
+      attributes: [
+        "doctor_id",
+        "first_name",
+        "middle_name",
+        "last_name",
+        "email",
+        "phone_no",
+        "status",
+        "created_on",
+        "created_by"
+      ],
+
+      include: [
+
+        {
+          model: DoctorDetails,
+          as: "doctor_detail",
+          include: [
+            {
+              model: DomainLookup,
+              as: "genderLookup",
+              attributes: ["domain_name"],
+              where: { domain_type: "gender" },
+              required: false
+            }
+          ]
+        },
+
+        {
+          model: DoctorSpecialization,
+          as: "doctor_specializations",
+
+          attributes: ["specialization_id"],
+
+          include: [
+            {
+              model: DomainLookup,
+              as: "specializationLookup",
+              attributes: ["domain_name"],
+              where: { domain_type: "specialization" },
+              required: false
+            }
+          ],
+
+          required: true
+        }
+
+      ],
+
+      order: [["doctor_id", "DESC"]]
+
+    });
+
+
+
+    /* FILTER FOR STANDARD ADMIN */
+
+    let filteredDoctors = doctors;
+
+    if (specializationFilter && specializationFilter.length > 0)
+    {
+      filteredDoctors =
+        doctors.filter(doc =>
+          specializationFilter.includes(
+            Number(
+              doc.doctor_specializations?.[0]?.specialization_id
+            )
+          )
+        );
+    }
+
+
+
+    /* FINAL RESPONSE */
+
+    const result = filteredDoctors.map(doc => ({
+
+      doctor_id: doc.doctor_id,
+
+      first_name: doc.first_name,
+
+      middle_name: doc.middle_name,
+
+      last_name: doc.last_name,
+
+      email: doc.email,
+
+      phone_no: doc.phone_no,
+
+      gender:
+        doc.doctor_detail?.genderLookup?.domain_name || null,
+
+      specialization:
+        doc.doctor_specializations?.[0]
+        ?.specializationLookup?.domain_name || null,
+
+      status: doc.status,
+
+      created_on: doc.created_on,
+
+      created_by: doc.created_by
+
+    }));
+
+
+    return {
+      success: true,
+      data: result
+    };
+
+  }
+
+  catch (error)
+  {
+    console.error("GET DOCTOR LIST ERROR:", error);
+
+    return {
+      success: false,
+      message: error.message
+    };
+  }
+}
+
 }
 
 module.exports = DoctorService;
