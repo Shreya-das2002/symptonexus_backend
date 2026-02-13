@@ -9,6 +9,7 @@ const User = require("../models/User");
 const Role = require("../models/Role");
 const UserRoleMapping = require("../models/User_role_mapping");
 const DomainLookup = require("../models/Domain_lookup");
+const Admin = require("../models/Admin_user")
 
 
 class DoctorService {
@@ -246,122 +247,184 @@ class DoctorService {
 
   }
 
- /* =====================================================
-   GET PENDING DOCTORS
-===================================================== */
 
-static async getPendingDoctors(userId, role) {
+  /* =====================================================
+     GET PENDING DOCTORS
+  ===================================================== */
 
-  try {
+  static async getPendingDoctors(userId, adminId, role) {
 
-    /* Super Admin sees all, others see only their doctors */
+    try {
 
-    let whereCondition = {
-      status: "Pending"
-    };
+      let whereCondition = {
+        status: "Pending"
+      };
 
-    // important fix
-    if (!role || role.toLowerCase() !== "super admin") {
-      whereCondition.created_by = userId;
-    }
+      let specializationFilter = null;
 
-    const doctors = await Doctor.findAll({
 
-      where: whereCondition,
+      if (role && role.toLowerCase() === "super admin") {
 
-      attributes: [
-        "doctor_id",
-        "first_name",
-        "middle_name",
-        "last_name",
-        "email",
-        "phone_no",
-        "status",
-        "created_on",
-        "created_by"
-      ],
+        // no filter
 
-      include: [
+      }
 
-        {
-          model: DoctorDetails,
-          as: "doctor_detail",
-          include: [
-            {
-              model: DomainLookup,
-              as: "genderLookup",
-              attributes: ["domain_name"],
-              where: { domain_type: "gender" },   // FIX ADDED
-              required: false
-            }
-          ]
-        },
+else if (role && role.toLowerCase() === "standard admin") {
 
-        {
-          model: DoctorSpecialization,
-          as: "doctor_specializations",
-         include: [
-            {
-              model: DomainLookup,
-              as: "specializationLookup",
-              attributes: ["domain_name"],
-              where: { domain_type: "specialization" },  // FIX ADDED
-              required: false
-            }
-          ]
-        }
+  const admin = await Admin.findByPk(adminId);
 
-      ]
+  if (!admin || !admin.department_id) {
 
-    });
-
-    const result = doctors.map(doc => ({
-
-      doctor_id: doc.doctor_id,
-      first_name: doc.first_name,
-      middle_name: doc.middle_name,
-      last_name: doc.last_name,
-      email: doc.email,
-      phone_no: doc.phone_no,
-
-      gender:
-        doc.doctor_detail?.genderLookup?.domain_name || null,
-
-      specialization:
-        doc.doctor_specializations?.[0]?.specializationLookup?.domain_name || null,
-
-      status: doc.status,
-
-      created_on: doc.created_on,
-
-      created_by: doc.created_by
-
-    }));
-
+    console.log("No department found for admin:", adminId);
 
     return {
-
       success: true,
-      data: result
-
+      data: []
     };
 
   }
 
-  catch (error) {
+  specializationFilter = admin.department_id
+    .split(",")
+    .map(id => Number(id.trim()));
 
-    console.error("GET PENDING DOCTORS ERROR:", error);
-
-    return {
-
-      success: false,
-      message: error.message
-
-    };
-
-  }
+  console.log("Admin departments:", specializationFilter);
 
 }
+
+
+      else if (role && role.toLowerCase() === "guest admin") {
+
+        whereCondition.created_by = userId;
+
+      }
+
+
+
+     const doctors = await Doctor.findAll({
+
+  where: whereCondition,
+
+  attributes: [
+    "doctor_id",
+    "first_name",
+    "middle_name",
+    "last_name",
+    "email",
+    "phone_no",
+    "status",
+    "created_on",
+    "created_by"
+  ],
+
+  include: [
+
+    {
+      model: DoctorDetails,
+      as: "doctor_detail",
+      include: [
+        {
+          model: DomainLookup,
+          as: "genderLookup",
+          attributes: ["domain_name"],
+          where: { domain_type: "gender" },
+          required: false
+        }
+      ]
+    },
+
+    {
+      model: DoctorSpecialization,
+      as: "doctor_specializations",
+
+      attributes: ["specialization_id"],   // IMPORTANT
+
+      include: [
+        {
+          model: DomainLookup,
+          as: "specializationLookup",
+          attributes: ["domain_name"],
+          where: { domain_type: "specialization" },
+          required: false
+        }
+      ],
+
+      required: true   // IMPORTANT
+    }
+
+  ]
+
+});
+
+
+      /* ================= FIXED FILTER ================= */
+let filteredDoctors = doctors;
+
+if (specializationFilter && specializationFilter.length > 0) {
+
+  filteredDoctors = doctors.filter(doc => {
+
+    const doctorSpec =
+      doc.doctor_specializations?.[0]?.specialization_id;
+
+    return specializationFilter.includes(
+      Number(doctorSpec)
+    );
+
+  });
+
+}
+
+
+
+    const result = filteredDoctors.map(doc => ({
+
+  doctor_id: doc.doctor_id,
+  first_name: doc.first_name,
+  middle_name: doc.middle_name,
+  last_name: doc.last_name,
+  email: doc.email,
+  phone_no: doc.phone_no,
+
+  gender:
+    doc.doctor_detail?.genderLookup?.domain_name || null,
+
+  specialization:
+    doc.doctor_specializations?.[0]
+    ?.specializationLookup?.domain_name || null,
+
+  status: doc.status,
+  created_on: doc.created_on,
+  created_by: doc.created_by
+
+}));
+
+
+      return {
+
+        success: true,
+        data: result
+
+      };
+
+    }
+
+    catch (error) {
+
+      console.error("GET PENDING DOCTORS ERROR:", error);
+
+      return {
+
+        success: false,
+        message: error.message
+
+      };
+
+    }
+
+  }
+
+
   /* Doctor status Update */ 
 
 static async updateDoctorStatus(doctorId, status, updatedBy) {

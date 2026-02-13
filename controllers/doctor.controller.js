@@ -65,63 +65,65 @@ class DoctorController {
   ===================================================== */
   static getPendingDoctors = asyncHandler(async (req, res) => {
 
-    try {
+  try {
 
-      const result = await DoctorService.getPendingDoctors(
-  req.user.user_id,
-  req.user.role
-);
+    const userId = req.user.user_id;
+    const role = req.user.role;
+    const adminId = req.user.admin_id || req.user.ref_id || null;
 
+    const result = await DoctorService.getPendingDoctors(
+      userId,
+      adminId,
+      role
+    );
 
-      // Defensive check
-      if (!result || typeof result.success !== "boolean") {
-
-        return res.sendResponse(
-          res.STATUS.INTERNAL_SERVER_ERROR,
-          "Invalid server response",
-          {},
-          "INVALID_RESPONSE"
-        );
-
-      }
-
-      // Business failure
-      if (!result.success) {
-
-        return res.sendResponse(
-          res.STATUS.BUSINESS_ERROR,
-          result.message || "Failed to fetch pending doctors",
-          {},
-          result.errorCode || "BUSINESS_ERROR",
-          false
-        );
-
-      }
-
-      // Success
-      return res.sendResponse(
-        res.STATUS.SUCCESS,
-        result.message || "Pending doctors fetched successfully",
-        result.data || [],
-        null,
-        true
-      );
-
-    }
-    catch (error) {
-
-      console.error("GET PENDING DOCTORS ERROR:", error);
+    if (!result || typeof result.success !== "boolean") {
 
       return res.sendResponse(
         res.STATUS.INTERNAL_SERVER_ERROR,
-        "Something went wrong. Please try again later.",
+        "Invalid server response",
         {},
-        "SERVER_ERROR"
+        "INVALID_RESPONSE"
       );
 
     }
 
-  });
+    if (!result.success) {
+
+      return res.sendResponse(
+        res.STATUS.BUSINESS_ERROR,
+        result.message || "Failed to fetch pending doctors",
+        {},
+        result.errorCode || "BUSINESS_ERROR",
+        false
+      );
+
+    }
+
+    return res.sendResponse(
+      res.STATUS.SUCCESS,
+      "Pending doctors fetched successfully",
+      result.data || [],
+      null,
+      true
+    );
+
+  }
+
+  catch (error) {
+
+    console.error("GET PENDING DOCTORS ERROR:", error);
+
+    return res.sendResponse(
+      res.STATUS.INTERNAL_SERVER_ERROR,
+      "Something went wrong. Please try again later.",
+      {},
+      "SERVER_ERROR"
+    );
+
+  }
+
+});
 
   /* Update Status */
 
