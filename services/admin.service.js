@@ -30,6 +30,7 @@ static async createAdmin(payload, createdBy = null) {
       email,
       phone_no,
       admin_type,
+      department_id,
       gender,
       password,
       confirm_password,
@@ -69,6 +70,17 @@ static async createAdmin(payload, createdBy = null) {
       };
 
     }
+
+    if (admin_type == 2 && !department_id) {
+
+  await t.rollback();
+
+  return {
+    success: false,
+    message: "Department is required for Standard Admin"
+  };
+
+}
 
     /* CHECK EMAIL */
 
@@ -125,6 +137,7 @@ static async createAdmin(payload, createdBy = null) {
       email,
       phone_no,
       gender: genderId,
+      department_id: admin_type == 2 ? department_id : null,
       status: "Active",
       created_by: createdBy
 
