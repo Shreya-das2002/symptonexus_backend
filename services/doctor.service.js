@@ -690,6 +690,100 @@ static async getDoctorList(userId, adminId, role)
   }
 }
 
+/* =====================================================
+        GET HOMEPAGE DOCTORS (ONLY 3 ACTIVE)
+===================================================== */
+
+static async getHomepageDoctors()
+{
+  try {
+
+    const doctors = await Doctor.findAll({
+
+      where: {
+        status: "Active"
+      },
+
+      attributes: [
+        "doctor_id",
+        "first_name",
+        "middle_name",
+        "last_name"
+      ],
+
+      include: [
+
+        {
+          model: DoctorSpecialization,
+          as: "doctor_specializations",
+
+          attributes: ["specialization_id"],
+
+          include: [
+            {
+              model: DomainLookup,
+              as: "specializationLookup",
+              attributes: ["domain_name"],
+              where: { domain_type: "specialization" },
+              required: false
+            }
+          ],
+
+          required: true
+        }
+
+      ],
+
+      order: sequelize.literal("RAND()"), // random doctors
+
+      limit: 3
+
+    });
+
+
+
+    const result = doctors.map(doc => ({
+
+      doctor_id: doc.doctor_id,
+
+      name:
+        `${doc.first_name} ${doc.middle_name ?? ""} ${doc.last_name}`,
+
+      specialization:
+        doc.doctor_specializations?.[0]
+        ?.specializationLookup?.domain_name || null
+
+    }));
+
+
+
+    return {
+
+      success: true,
+
+      data: result
+
+    };
+
+  }
+
+  catch (error)
+  {
+
+    console.error("GET HOMEPAGE DOCTORS ERROR:", error);
+
+    return {
+
+      success: false,
+
+      message: error.message
+
+    };
+
+  }
+
+}
+
 }
 
 module.exports = DoctorService;

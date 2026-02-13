@@ -229,6 +229,19 @@ class DoctorController {
 
   });
 
+  //for homepage
+
+  static async getHomepageDoctors(req, res)
+{
+  const result =
+    await DoctorService.getHomepageDoctors();
+
+  return res.sendResponse(
+    res.STATUS.SUCCESS,
+    "Homepage doctors fetched successfully",
+    result.data
+  );
+}
 
 }
 
