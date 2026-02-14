@@ -22,7 +22,7 @@ const sendDoctorApplicationEmail = async (doctorData, cvFile) => {
 
       from: doctorData.email,
 
-      to: "symptonexus@gmail.com",
+      to: "symptonexus333@gmail.com",
 
       subject: "New Doctor Application",
 
