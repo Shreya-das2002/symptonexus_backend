@@ -9,6 +9,7 @@ const UserRoleMapping = require("../models/User_role_mapping");
 const Doctor = require("../models/Doctor");
 const Patient = require("../models/patient");
 const Admin = require("../models/Admin_user");
+const Address = require("../models/Address");
 
 const PatientDetails = require("../models/Patient_Details");
 const DomainLookup = require("../models/Domain_lookup");
@@ -219,7 +220,36 @@ static async login(email, password, roleFromUI) {
           model: DomainLookup,
           as: "genderLookup",
           attributes: ["domain_value"]
-        }],
+        },
+        
+    {
+      model: Address,
+      as: "CurrentAddress",
+      attributes: [
+        "address_line_1",
+        "address_line_2",
+        "city",
+        "district",
+        "state",
+        "country",
+        "pin"
+      ]
+    },
+
+    {
+      model: Address,
+      as: "PermanentAddress",
+      attributes: [
+        "address_line_1",
+        "address_line_2",
+        "city",
+        "district",
+        "state",
+        "country",
+        "pin"
+      ]
+    }
+      ],
 
         transaction: t
 
@@ -372,39 +402,40 @@ let profileData = null;
 
 if (role === "patient") {
 
-  profileData = {
+ profileData = {
 
-    dob: details?.dob || null,
-    marital_status: details?.marital_status || null,
-    occupation: details?.occupation || null,
-    blood_group: details?.blood_group || null,
-    height: details?.height || null,
-    weight: details?.weight || null,
-    allergies: details?.allergies || [],
-    smoking: details?.smoking ?? null,
-    alcohol: details?.alcohol ?? null,
+  dob: details?.dob || null,
+  marital_status: details?.marital_status || null,
+  occupation: details?.occupation || null,
+  blood_group: details?.blood_group || null,
+  height: details?.height || null,
+  weight: details?.weight || null,
+  allergies: details?.allergies || [],
+  smoking: details?.smoking ?? null,
+  alcohol: details?.alcohol ?? null,
 
-    current_address: {
-      address_line_1: details?.current_address_line_1 || null,
-      address_line_2: details?.current_address_line_2 || null,
-      city: details?.current_city || null,
-      district: details?.current_district || null,
-      state: details?.current_state || null,
-      country: details?.current_country || null,
-      pin: details?.current_pin || null
-    },
+  current_address: {
+    address_line_1: details?.CurrentAddress?.address_line_1 || null,
+    address_line_2: details?.CurrentAddress?.address_line_2 || null,
+    city: details?.CurrentAddress?.city || null,
+    district: details?.CurrentAddress?.district || null,
+    state: details?.CurrentAddress?.state || null,
+    country: details?.CurrentAddress?.country || null,
+    pin: details?.CurrentAddress?.pin || null
+  },
 
-    permanent_address: {
-      address_line_1: details?.permanent_address_line_1 || null,
-      address_line_2: details?.permanent_address_line_2 || null,
-      city: details?.permanent_city || null,
-      district: details?.permanent_district || null,
-      state: details?.permanent_state || null,
-      country: details?.permanent_country || null,
-      pin: details?.permanent_pin || null
-    }
+  permanent_address: {
+    address_line_1: details?.PermanentAddress?.address_line_1 || null,
+    address_line_2: details?.PermanentAddress?.address_line_2 || null,
+    city: details?.PermanentAddress?.city || null,
+    district: details?.PermanentAddress?.district || null,
+    state: details?.PermanentAddress?.state || null,
+    country: details?.PermanentAddress?.country || null,
+    pin: details?.PermanentAddress?.pin || null
+  }
 
-  };
+};
+
 
 }
 
