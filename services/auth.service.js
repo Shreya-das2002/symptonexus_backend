@@ -366,6 +366,48 @@ const buttons = await ControlMaster.findAll({
 
     );
 
+    /* ================= BUILD PROFILE DATA ================= */
+
+let profileData = null;
+
+if (role === "patient") {
+
+  profileData = {
+
+    dob: details?.dob || null,
+    marital_status: details?.marital_status || null,
+    occupation: details?.occupation || null,
+    blood_group: details?.blood_group || null,
+    height: details?.height || null,
+    weight: details?.weight || null,
+    allergies: details?.allergies || [],
+    smoking: details?.smoking ?? null,
+    alcohol: details?.alcohol ?? null,
+
+    current_address: {
+      address_line_1: details?.current_address_line_1 || null,
+      address_line_2: details?.current_address_line_2 || null,
+      city: details?.current_city || null,
+      district: details?.current_district || null,
+      state: details?.current_state || null,
+      country: details?.current_country || null,
+      pin: details?.current_pin || null
+    },
+
+    permanent_address: {
+      address_line_1: details?.permanent_address_line_1 || null,
+      address_line_2: details?.permanent_address_line_2 || null,
+      city: details?.permanent_city || null,
+      district: details?.permanent_district || null,
+      state: details?.permanent_state || null,
+      country: details?.permanent_country || null,
+      pin: details?.permanent_pin || null
+    }
+
+  };
+
+}
+
 
 
     await t.commit();
@@ -381,6 +423,7 @@ const buttons = await ControlMaster.findAll({
         token,
         role,
         user: userData,
+        profile: profileData,
         menus,
         buttons
 
