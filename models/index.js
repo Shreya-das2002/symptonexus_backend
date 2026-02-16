@@ -12,6 +12,9 @@ const DoctorExperience = require("./Doctor_experience");
 const Patient = require("./patient");
 const PatientDetails = require("./Patient_Details");
 
+const Appointment = require("./Appointment");
+const DoctorAvailability = require("./Doctor_Availablity");
+
 const Address = require("./Address");
 
 const DomainLookup = require("./Domain_lookup");
@@ -26,6 +29,50 @@ const ControlRoleMapping = require("./Control_role_mapping");
 
 const UserRoleMapping = require("./User_role_mapping");
 
+/* =====================================================
+      Appointment
+===================================================== */
+
+/* PATIENT */
+Patient.hasMany(Appointment, {
+  foreignKey: "patient_id",
+  as: "appointments"
+});
+
+Appointment.belongsTo(Patient, {
+  foreignKey: "patient_id",
+  as: "patient"
+});
+
+/* DOCTOR */
+Doctor.hasMany(Appointment, {
+  foreignKey: "doctor_id",
+  as: "appointments"
+});
+
+Appointment.belongsTo(Doctor, {
+  foreignKey: "doctor_id",
+  as: "doctor"
+});
+
+/* STATUS LOOKUP */
+Appointment.belongsTo(DomainLookup, {
+  foreignKey: "booking_status",
+  as: "statusLookup"
+});
+
+
+/* DOCTOR → AVAILABILITY */
+
+Doctor.hasMany(DoctorAvailability, {
+  foreignKey: "doctor_id",
+  as: "availabilities"
+});
+
+DoctorAvailability.belongsTo(Doctor, {
+  foreignKey: "doctor_id",
+  as: "doctor"
+});
 
 /* =====================================================
    ADMIN USER → USER
@@ -271,6 +318,9 @@ module.exports = {
 
   Address,
 
-  DomainLookup
+  DomainLookup,
 
+  Appointment,
+
+  DoctorAvailability
 };

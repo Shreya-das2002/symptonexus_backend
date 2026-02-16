@@ -30,6 +30,11 @@ app.use(express.urlencoded({ extended: true }));
 const registerRoutes = require('./routes/index.routes');
 registerRoutes(app);
 
+sequelize.sync()
+  .then(() => {
+    console.log("Database synced")
+      })
+
 const PORT = 4000;
 
 //  IMPORTANT FIX

@@ -1,0 +1,37 @@
+const sequelize = require("../config/database");
+const { DataTypes } = require("sequelize");
+
+const DoctorAvailability = sequelize.define("doctor_availability", {
+
+  doctor_availability_id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+
+  doctor_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false
+  },
+
+  date: {
+    type: DataTypes.DATEONLY,
+    allowNull: false
+  },
+
+  slot_count: {
+    type: DataTypes.INTEGER,
+    allowNull: false
+  },
+
+  status: {
+    type: DataTypes.INTEGER,
+    defaultValue: 1
+  }
+
+}, {
+  tableName: "doctor_availability",
+  timestamps: false
+});
+
+module.exports = DoctorAvailability;
