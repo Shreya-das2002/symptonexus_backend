@@ -151,7 +151,7 @@ class AdminService {
         phone_no,
         gender: genderId,
         department_id:
-    admin_type == 2
+        admin_type == 2
       ? department_id.join(",")  
       : null,
         status: "Active",

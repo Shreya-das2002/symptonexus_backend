@@ -358,7 +358,8 @@ const buttons = await ControlMaster.findAll({
         middle_name: profile.middle_name,
         last_name: profile.last_name,
         phone_no: profile.phone_no,
-        gender: profile.gender || ""
+        gender: profile.gender || "",
+        department: profile.department || ""
 
       };
 
