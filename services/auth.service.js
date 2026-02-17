@@ -257,8 +257,6 @@ static async login(email, password, roleFromUI) {
 
     }
 
-
-
     /* ================= LOAD MENUS ================= */
 
     const menus = await ControlMaster.findAll({
@@ -359,8 +357,7 @@ const buttons = await ControlMaster.findAll({
         last_name: profile.last_name,
         phone_no: profile.phone_no,
         gender: profile.gender || "",
-        department: profile.department || ""
-
+        department_id: profile.department_id || null
       };
 
     }
