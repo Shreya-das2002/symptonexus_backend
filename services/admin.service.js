@@ -190,7 +190,7 @@ class AdminService {
 
       /* FETCH CREATOR ROLE NAME USING role_id */
 
-     let creatorRole = null;
+      let creatorRole = null;
 
 if (createdBy) {
   creatorRole = await Role.findByPk(createdBy, {

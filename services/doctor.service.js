@@ -300,7 +300,7 @@ else if (role && role.toLowerCase() === "standard admin") {
 
 
 
-     const doctors = await Doctor.findAll({
+      const doctors = await Doctor.findAll({
 
   where: whereCondition,
 
@@ -558,6 +558,12 @@ static async getDoctorList(userId, adminId, role)
 
     }
 
+/* GUEST ADMIN → SEE ONLY ACTIVE + THEIR CREATED DOCTORS */
+else if (role && role.toLowerCase() === "guest admin") {
+
+  whereCondition.status = "Active";    
+  whereCondition.created_by = userId;  
+}
 
 
 
