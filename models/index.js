@@ -149,21 +149,26 @@ DoctorDetail.belongsTo(Doctor, {
 
 
 Doctor.hasMany(DoctorSpecialization, {
-  foreignKey: "doctor_id"
+  foreignKey: "doctor_id",
+  as: "doctor_specializations"
 });
 
 DoctorSpecialization.belongsTo(Doctor, {
-  foreignKey: "doctor_id"
+  foreignKey: "doctor_id",
+  as: "doctor"
 });
 
 
 Doctor.hasMany(DoctorExperience, {
-  foreignKey: "doctor_id"
+  foreignKey: "doctor_id",
+  as: "doctor_experiences" 
 });
 
 DoctorExperience.belongsTo(Doctor, {
-  foreignKey: "doctor_id"
+  foreignKey: "doctor_id",
+  as: "doctor"
 });
+
 
 
 /* =====================================================
