@@ -10,7 +10,8 @@ const User = require("../models/User");
 const Role = require("../models/Role");
 const UserRoleMapping = require("../models/User_role_mapping");
 const DomainLookup = require("../models/Domain_lookup");
-const Admin = require("../models/Admin_user")
+const Admin = require("../models/Admin_user");
+const Address = require("../models/Address");
 
 
 class DoctorService {
@@ -626,6 +627,36 @@ else if (role && role.toLowerCase() === "guest admin") {
         model: DoctorExperience,
         as: "doctor_experiences",
         required: false
+      },
+
+      
+{
+      model: Address,
+      as: "CurrentAddress",
+      attributes: [
+        "address_line_1",
+        "address_line_2",
+        "city",
+        "district",
+        "state",
+        "country",
+        "pin"
+      ]
+    },
+
+    {
+      model: Address,
+      as: "PermanentAddress",
+      attributes: [
+        "address_line_1",
+        "address_line_2",
+        "city",
+        "district",
+        "state",
+        "country",
+        "pin"
+      ]
+    
       }
 
       ],
@@ -671,16 +702,43 @@ const result = filteredDoctors.map(doc => ({
     bio: doc.doctor_detail?.sort_desc || null
   },
 
+  doctor_address: {
+    current_address: {
+      address_line_1: doc.CurrentAddress?.address_line_1 || null,
+      address_line_2: doc.CurrentAddress?.address_line_2 || null,
+      city: doc.CurrentAddress?.city || null,
+      district: doc.CurrentAddress?.district || null,
+      state: doc.CurrentAddress?.state || null,
+      country: doc.CurrentAddress?.country || null,
+      pin: doc.CurrentAddress?.pin || null
+    },
+
+    permanent_address: {
+      address_line_1: doc.PermanentAddress?.address_line_1 || null,
+      address_line_2: doc.PermanentAddress?.address_line_2 || null,
+      city: doc.PermanentAddress?.city || null,
+      district: doc.PermanentAddress?.district || null,
+      state: doc.PermanentAddress?.state || null,
+      country: doc.PermanentAddress?.country || null,
+      pin: doc.PermanentAddress?.pin || null
+    }
+
+  },
+
+    doctor_experiences:
+    doc.doctor_experiences?.map(exp => ({
+      organization_name: exp.organization_name,
+      start_date: exp.start_date,
+      end_date: exp.end_date,
+      designation: exp.key_experience,
+      responsibilities: exp.experience_desc,
+    })) || [],
+
   status: doc.status,
   created_on: doc.created_on,
   created_by: doc.created_by,
 
-  doctor_experiences:
-    doc.doctor_experiences?.map(exp => ({
-      organization_name: exp.organization_name,
-      start_date: exp.start_date,
-      end_date: exp.end_date
-    })) || []
+
 }));
 
 
