@@ -17,6 +17,8 @@ const DoctorDetail = sequelize.define("doctor_details", {
   gender: DataTypes.INTEGER,
   address_id: DataTypes.INTEGER,
   experience: DataTypes.INTEGER,
+  licence_number: DataTypes.STRING,
+  registration_number: DataTypes.STRING,
   sort_desc: DataTypes.STRING,
 }, {
   timestamps: false,
