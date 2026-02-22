@@ -10,7 +10,8 @@ const User = require("../models/User");
 const Role = require("../models/Role");
 const UserRoleMapping = require("../models/User_role_mapping");
 const DomainLookup = require("../models/Domain_lookup");
-const Admin = require("../models/Admin_user")
+const Admin = require("../models/Admin_user");
+const Address = require("../models/Address");
 
 
 class DoctorService {
@@ -626,6 +627,36 @@ else if (role && role.toLowerCase() === "guest admin") {
         model: DoctorExperience,
         as: "doctor_experiences",
         required: false
+      },
+
+      
+{
+      model: Address,
+      as: "CurrentAddress",
+      attributes: [
+        "address_line_1",
+        "address_line_2",
+        "city",
+        "district",
+        "state",
+        "country",
+        "pin"
+      ]
+    },
+
+    {
+      model: Address,
+      as: "PermanentAddress",
+      attributes: [
+        "address_line_1",
+        "address_line_2",
+        "city",
+        "district",
+        "state",
+        "country",
+        "pin"
+      ]
+    
       }
 
       ],
@@ -656,51 +687,60 @@ else if (role && role.toLowerCase() === "guest admin") {
 
     /* FINAL RESPONSE */
 
-    const result = filteredDoctors.map(doc => ({
+const result = filteredDoctors.map(doc => ({
+  basic_information: {
+    first_name: doc.first_name,
+    middle_name: doc.middle_name,
+    last_name: doc.last_name,
+    dob: doc.doctor_detail?.dob || null,
+    gender: doc.doctor_detail?.genderLookup?.domain_name || null,
+    doctor_id: doc.doctor_id,
+    licence_number: doc.doctor_detail?.licence_number || null,
+    experience: doc.doctor_detail?.experience || null,
+    specialization:
+      doc.doctor_specializations?.[0]?.specializationLookup?.domain_name || null,
+    bio: doc.doctor_detail?.sort_desc || null
+  },
 
-      doctor_id: doc.doctor_id,
+  doctor_address: {
+    current_address: {
+      address_line_1: doc.CurrentAddress?.address_line_1 || null,
+      address_line_2: doc.CurrentAddress?.address_line_2 || null,
+      city: doc.CurrentAddress?.city || null,
+      district: doc.CurrentAddress?.district || null,
+      state: doc.CurrentAddress?.state || null,
+      country: doc.CurrentAddress?.country || null,
+      pin: doc.CurrentAddress?.pin || null
+    },
 
-      doctor_no: doc.doctor_no,
+    permanent_address: {
+      address_line_1: doc.PermanentAddress?.address_line_1 || null,
+      address_line_2: doc.PermanentAddress?.address_line_2 || null,
+      city: doc.PermanentAddress?.city || null,
+      district: doc.PermanentAddress?.district || null,
+      state: doc.PermanentAddress?.state || null,
+      country: doc.PermanentAddress?.country || null,
+      pin: doc.PermanentAddress?.pin || null
+    }
 
-      first_name: doc.first_name,
+  },
 
-      middle_name: doc.middle_name,
-
-      last_name: doc.last_name,
-
-      email: doc.email,
-
-      phone_no: doc.phone_no,
-
-      gender:
-        doc.doctor_detail?.genderLookup?.domain_name || null,
-
-      specialization:
-        doc.doctor_specializations?.[0]
-        ?.specializationLookup?.domain_name || null,
-
-      status: doc.status,
-
-      created_on: doc.created_on,
-
-      created_by: doc.created_by,
-
-      doctor_details: {
-      dob: doc.doctor_detail?.dob || null,
-      gender: doc.doctor_detail?.genderLookup?.domain_name || null,
-      licence_number: doc.doctor_detail?.licence_number || null,
-      registration_number: doc.doctor_detail?.registration_number || null,
-      experience: doc.doctor_detail?.experience || null,
-      bio: doc.doctor_detail?.sort_desc || null },
-
-  doctor_experiences: doc.doctor_experiences?.map(exp => ({
-  organization_name: exp.organization_name,
-  start_date: exp.start_date,
-  end_date: exp.end_date
-})) || []
+    doctor_experiences:
+    doc.doctor_experiences?.map(exp => ({
+      organization_name: exp.organization_name,
+      start_date: exp.start_date,
+      end_date: exp.end_date,
+      designation: exp.key_experience,
+      responsibilities: exp.experience_desc,
+    })) || [],
 
 
-    }));
+  status: doc.status,
+  created_on: doc.created_on,
+  created_by: doc.created_by
+
+
+}));
 
 
     return {
