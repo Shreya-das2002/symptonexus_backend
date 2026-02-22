@@ -13,7 +13,10 @@ const DoctorDetail = sequelize.define("doctor_details", {
     allowNull: false,
   },
 
-  dob: DataTypes.DATEONLY,
+  dob: {
+    type: DataTypes.DATEONLY,
+    allowNull: true,
+  },
   gender: DataTypes.INTEGER,
   current_address_id: DataTypes.INTEGER,
   permanent_address_id: DataTypes.INTEGER,

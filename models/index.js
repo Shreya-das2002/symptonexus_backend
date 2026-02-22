@@ -136,7 +136,7 @@ PatientDetails.belongsTo(Patient, {
 
 
 /* =====================================================
-   DOCTOR RELATIONS
+    DOCTOR RELATIONS
 ===================================================== */
 
 Doctor.hasOne(DoctorDetail, {
@@ -172,7 +172,7 @@ DoctorExperience.belongsTo(Doctor, {
 
 
 /* =====================================================
-   ADDRESS RELATIONS
+    ADDRESS RELATIONS
 ===================================================== */
 
 Address.hasMany(PatientDetails, {

@@ -600,37 +600,8 @@ else if (role && role.toLowerCase() === "guest admin") {
               attributes: ["domain_name"],
               where: { domain_type: "gender" },
               required: false
-            }
-          ]
-        },
-
-        {
-          model: DoctorSpecialization,
-          as: "doctor_specializations",
-
-          attributes: ["specialization_id"],
-
-          include: [
+            },
             {
-              model: DomainLookup,
-              as: "specializationLookup",
-              attributes: ["domain_name"],
-              where: { domain_type: "specialization" },
-              required: false
-            }
-          ],
-
-          required: true
-        },
-
-          {
-        model: DoctorExperience,
-        as: "doctor_experiences",
-        required: false
-      },
-
-      
-{
       model: Address,
       as: "CurrentAddress",
       attributes: [
@@ -659,6 +630,35 @@ else if (role && role.toLowerCase() === "guest admin") {
     
       }
 
+          ]
+        },
+
+        {
+          model: DoctorSpecialization,
+          as: "doctor_specializations",
+
+          attributes: ["specialization_id"],
+
+          include: [
+            {
+              model: DomainLookup,
+              as: "specializationLookup",
+              attributes: ["domain_name"],
+              where: { domain_type: "specialization" },
+              required: false
+            }
+          ],
+
+          required: true
+        },
+
+          {
+        model: DoctorExperience,
+        as: "doctor_experiences",
+        required: false
+      },
+
+    
       ],
 
       order: [["doctor_id", "DESC"]]
@@ -688,39 +688,41 @@ else if (role && role.toLowerCase() === "guest admin") {
     /* FINAL RESPONSE */
 
 const result = filteredDoctors.map(doc => ({
-  basic_information: {
+
+    doctor_id: doc.doctor_id,
     first_name: doc.first_name,
     middle_name: doc.middle_name,
     last_name: doc.last_name,
     dob: doc.doctor_detail?.dob || null,
+    email: doc.email,
+    phone_no: doc.phone_no,
     gender: doc.doctor_detail?.genderLookup?.domain_name || null,
-    doctor_id: doc.doctor_id,
+    doctor_no: doc.doctor_no,
     licence_number: doc.doctor_detail?.licence_number || null,
     experience: doc.doctor_detail?.experience || null,
     specialization:
       doc.doctor_specializations?.[0]?.specializationLookup?.domain_name || null,
-    bio: doc.doctor_detail?.sort_desc || null
-  },
+    bio: doc.doctor_detail?.sort_desc || null,
 
   doctor_address: {
     current_address: {
-      address_line_1: doc.CurrentAddress?.address_line_1 || null,
-      address_line_2: doc.CurrentAddress?.address_line_2 || null,
-      city: doc.CurrentAddress?.city || null,
-      district: doc.CurrentAddress?.district || null,
-      state: doc.CurrentAddress?.state || null,
-      country: doc.CurrentAddress?.country || null,
-      pin: doc.CurrentAddress?.pin || null
+      address_line_1: doc.doctor_detail.CurrentAddress?.address_line_1 || null,
+      address_line_2: doc.doctor_detail.CurrentAddress?.address_line_2 || null,
+      city: doc.doctor_detail.CurrentAddress?.city || null,
+      district: doc.doctor_detail.CurrentAddress?.district || null,
+      state: doc.doctor_detail.CurrentAddress?.state || null,
+      country: doc.doctor_detail.CurrentAddress?.country || null,
+      pin: doc.doctor_detail.CurrentAddress?.pin || null
     },
 
     permanent_address: {
-      address_line_1: doc.PermanentAddress?.address_line_1 || null,
-      address_line_2: doc.PermanentAddress?.address_line_2 || null,
-      city: doc.PermanentAddress?.city || null,
-      district: doc.PermanentAddress?.district || null,
-      state: doc.PermanentAddress?.state || null,
-      country: doc.PermanentAddress?.country || null,
-      pin: doc.PermanentAddress?.pin || null
+      address_line_1: doc.doctor_detail.PermanentAddress?.address_line_1 || null,
+      address_line_2: doc.doctor_detail.PermanentAddress?.address_line_2 || null,
+      city: doc.doctor_detail.PermanentAddress?.city || null,
+      district: doc.doctor_detail.PermanentAddress?.district || null,
+      state: doc.doctor_detail.PermanentAddress?.state || null,
+      country: doc.doctor_detail.PermanentAddress?.country || null,
+      pin: doc.doctor_detail.PermanentAddress?.pin || null
     }
 
   },
