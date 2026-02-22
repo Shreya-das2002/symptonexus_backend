@@ -1,6 +1,6 @@
 const Doctor = require("../models/Doctor");
 const DoctorDetails = require("../models/Doctor_Details");
-const DoctorExperience = require("../models/Doctor_Experience");
+const DoctorExperience = require("../models/Doctor_experience");
 const Address = require("../models/Address");
 const sequelize = require("../config/database");
 

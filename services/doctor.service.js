@@ -5,6 +5,7 @@ const Doctor = require("../models/Doctor");
 const DoctorDetails = require("../models/Doctor_Details");
 const DoctorSpecialization = require("../models/Doctor_specalization");
 
+const DoctorExperience = require("../models/Doctor_experience");
 const User = require("../models/User");
 const Role = require("../models/Role");
 const UserRoleMapping = require("../models/User_role_mapping");
@@ -619,7 +620,13 @@ else if (role && role.toLowerCase() === "guest admin") {
           ],
 
           required: true
-        }
+        },
+
+          {
+        model: DoctorExperience,
+        as: "doctor_experiences",
+        required: false
+      }
 
       ],
 
@@ -676,7 +683,21 @@ else if (role && role.toLowerCase() === "guest admin") {
 
       created_on: doc.created_on,
 
-      created_by: doc.created_by
+      created_by: doc.created_by,
+
+      doctor_details: {
+      dob: doc.doctor_detail?.dob || null,
+      gender: doc.doctor_detail?.genderLookup?.domain_name || null,
+      licence_number: doc.doctor_detail?.licence_number || null,
+      registration_number: doc.doctor_detail?.registration_number || null,
+      experience: doc.doctor_detail?.experience || null,
+      bio: doc.doctor_detail?.sort_desc || null },
+
+      doctor_experience: {
+        organigation: doc.doctor_experience?.organigation_name || null
+      }
+
+
 
     }));
 
