@@ -656,51 +656,32 @@ else if (role && role.toLowerCase() === "guest admin") {
 
     /* FINAL RESPONSE */
 
-    const result = filteredDoctors.map(doc => ({
+const result = filteredDoctors.map(doc => ({
+  basic_information: {
+    first_name: doc.first_name,
+    middle_name: doc.middle_name,
+    last_name: doc.last_name,
+    dob: doc.doctor_detail?.dob || null,
+    gender: doc.doctor_detail?.genderLookup?.domain_name || null,
+    doctor_id: doc.doctor_id,
+    licence_number: doc.doctor_detail?.licence_number || null,
+    experience: doc.doctor_detail?.experience || null,
+    specialization:
+      doc.doctor_specializations?.[0]?.specializationLookup?.domain_name || null,
+    bio: doc.doctor_detail?.sort_desc || null
+  },
 
-      doctor_id: doc.doctor_id,
+  status: doc.status,
+  created_on: doc.created_on,
+  created_by: doc.created_by,
 
-      doctor_no: doc.doctor_no,
-
-      first_name: doc.first_name,
-
-      middle_name: doc.middle_name,
-
-      last_name: doc.last_name,
-
-      email: doc.email,
-
-      phone_no: doc.phone_no,
-
-      gender:
-        doc.doctor_detail?.genderLookup?.domain_name || null,
-
-      specialization:
-        doc.doctor_specializations?.[0]
-        ?.specializationLookup?.domain_name || null,
-
-      status: doc.status,
-
-      created_on: doc.created_on,
-
-      created_by: doc.created_by,
-
-      doctor_details: {
-      dob: doc.doctor_detail?.dob || null,
-      gender: doc.doctor_detail?.genderLookup?.domain_name || null,
-      licence_number: doc.doctor_detail?.licence_number || null,
-      registration_number: doc.doctor_detail?.registration_number || null,
-      experience: doc.doctor_detail?.experience || null,
-      bio: doc.doctor_detail?.sort_desc || null },
-
-   doctor_experiences: doc.doctor_experiences?.map(exp => ({
-  organization_name: exp.organization_name,
-  start_date: exp.start_date,
-  end_date: exp.end_date
-})) || []
-
-
-    }));
+  doctor_experiences:
+    doc.doctor_experiences?.map(exp => ({
+      organization_name: exp.organization_name,
+      start_date: exp.start_date,
+      end_date: exp.end_date
+    })) || []
+}));
 
 
     return {
