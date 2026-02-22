@@ -13,8 +13,8 @@ const DoctorExperience = sequelize.define("doctor_experiences", {
     allowNull: false,
   },
 
-  start_date: DataTypes.DATE,
-  end_date: DataTypes.DATE,
+  start_date: DataTypes.DATEONLY,
+  end_date: DataTypes.DATEONLY,
   organization_name: DataTypes.STRING,
   key_experience: DataTypes.STRING,
   experience_desc: DataTypes.TEXT,

@@ -11,5 +11,5 @@ module.exports = (app) => {
   app.use("/api/admin", CreateAdminRoutes ); 
   app.use("/api/doctor", DoctorRoutes);
   app.use("/api", applyDoctorRoutes);
-  app.use("api//doctor", DoctorProfileRoutes);
+  app.use("/api/doctor", DoctorProfileRoutes);
 };
