@@ -575,6 +575,7 @@ else if (role && role.toLowerCase() === "guest admin") {
 
       attributes: [
         "doctor_id",
+        "doctor_no",
         "first_name",
         "middle_name",
         "last_name",
@@ -651,6 +652,8 @@ else if (role && role.toLowerCase() === "guest admin") {
     const result = filteredDoctors.map(doc => ({
 
       doctor_id: doc.doctor_id,
+
+      doctor_no: doc.doctor_no,
 
       first_name: doc.first_name,
 
