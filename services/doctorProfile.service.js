@@ -1,17 +1,8 @@
 const Doctor = require("../models/Doctor");
 const DoctorDetails = require("../models/Doctor_Details");
 const DoctorExperience = require("../models/Doctor_Experience");
-const DoctorSpecialization = require("../models/Doctor_specalization");
 const Address = require("../models/Address");
-const DomainLookup = require("../models/Domain_lookup");
 const sequelize = require("../config/database");
-
-/* ================= HELPER ================= */
-
-const toNumber = (v) => {
-  const n = Number(v);
-  return Number.isNaN(n) ? null : n;
-};
 
 /* ================= ADDRESS BUILDER ================= */
 
@@ -40,19 +31,18 @@ class DoctorProfileService {
       const {
         doctor_id,
         dob,
-        gender,
         licence_number,
+        registration_number,
         experience,
-        specialization_id,
         bio,
         current_address,
         permanent_address,
         experiences,
-    } = payload;
+      } = payload;
 
-        if (!doctor_id) {
-            throw new Error("DOCTOR_ID_REQUIRED");
-        }
+      if (!doctor_id) {
+        throw new Error("DOCTOR_ID_REQUIRED");
+      }
 
       /* ================= CHECK EXISTING ================= */
 
@@ -60,50 +50,6 @@ class DoctorProfileService {
         where: { doctor_id },
         transaction: t,
       });
-
-      /* ================= VALIDATE GENDER ================= */
-
-      let genderValue = null;
-
-      if (gender !== null && gender !== undefined) {
-        const value = toNumber(gender);
-
-        const g = await DomainLookup.findOne({
-          where: {
-            domain_type: "gender",
-            domain_value: value,
-          },
-          transaction: t,
-        });
-
-        if (!g) {
-          throw new Error(`INVALID_GENDER: ${value}`);
-        }
-
-        genderValue = value;
-      }
-
-      /* ================= VALIDATE SPECIALIZATION ================= */
-
-      let specializationValue = null;
-
-      if (specialization_id !== null && specialization_id !== undefined) {
-        const value = toNumber(specialization_id);
-
-        const sp = await DomainLookup.findOne({
-          where: {
-            domain_type: "specialization",
-            domain_value: value,
-          },
-          transaction: t,
-        });
-
-        if (!sp) {
-          throw new Error(`INVALID_SPECIALIZATION: ${value}`);
-        }
-
-        specializationValue = value;
-      }
 
       /* ================= ADDRESS ================= */
 
@@ -143,9 +89,9 @@ class DoctorProfileService {
       const detailsData = {
         doctor_id,
         dob,
-        gender: genderValue,
         experience,
         licence_number,
+        registration_number,
         sort_desc: bio,
         current_address_id: currentAddressId,
         permanent_address_id: permanentAddressId,
@@ -158,24 +104,6 @@ class DoctorProfileService {
         });
       } else {
         await DoctorDetails.create(detailsData, { transaction: t });
-      }
-
-      /* ================= SPECIALIZATION ================= */
-
-      if (specializationValue) {
-        await DoctorSpecialization.destroy({
-          where: { doctor_id },
-          transaction: t,
-        });
-
-        await DoctorSpecialization.create(
-          {
-            doctor_id,
-            specialization_id: specializationValue,
-            status: 1,
-          },
-          { transaction: t }
-        );
       }
 
       /* ================= EXPERIENCE ================= */
@@ -215,7 +143,7 @@ class DoctorProfileService {
       return {
         success: true,
         user: user.toJSON(),
-        profile: details.toJSON(),
+        doc_profile: details.toJSON(),
       };
 
     } catch (error) {

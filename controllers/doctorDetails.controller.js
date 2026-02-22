@@ -3,16 +3,15 @@ const doctorProfileService = require("../services/doctorProfile.service");
 
 class DoctorProfileController {
 
-  /* ===================== SAVE DOCTOR PROFILE ===================== */
   saveDoctorProfile = asyncHandler(async (req, res) => {
 
     try {
 
       console.log("REQUEST BODY:", req.body);
 
-      const { doctor_id } = req.body;
+      /* ================= GET FROM PARAM ================= */
 
-      /* ================= VALIDATION ================= */
+      const { doctor_id } = req.params;
 
       if (!doctor_id) {
         return res.sendResponse(
@@ -24,11 +23,12 @@ class DoctorProfileController {
         );
       }
 
+      req.body.doctor_id = doctor_id;
+
       /* ================= SERVICE ================= */
 
       const result = await doctorProfileService.saveDoctorProfile(req.body);
 
-      // Defensive check
       if (!result || typeof result !== "object") {
         return res.sendResponse(
           res.STATUS.INTERNAL_SERVER_ERROR,
@@ -45,7 +45,7 @@ class DoctorProfileController {
         "Doctor profile saved successfully",
         {
           user: result.user,
-          profile: result.profile
+          doc_profile: result.doc_profile
         },
         null,
         true
