@@ -693,7 +693,7 @@ else if (role && role.toLowerCase() === "guest admin") {
       experience: doc.doctor_detail?.experience || null,
       bio: doc.doctor_detail?.sort_desc || null },
 
-   doctor_experiences: doc.doctor_experiences?.map(exp => ({
+  doctor_experiences: doc.doctor_experiences?.map(exp => ({
   organization_name: exp.organization_name,
   start_date: exp.start_date,
   end_date: exp.end_date

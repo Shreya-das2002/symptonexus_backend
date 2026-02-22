@@ -195,6 +195,25 @@ PatientDetails.belongsTo(Address, {
   as: "PermanentAddress"
 });
 
+/* ================= DOCTOR ADDRESS RELATION ================= */
+
+Address.hasMany(DoctorDetail, {
+  foreignKey: "current_address_id"
+});
+
+Address.hasMany(DoctorDetail, {
+  foreignKey: "permanent_address_id"
+});
+
+DoctorDetail.belongsTo(Address, {
+  foreignKey: "current_address_id",
+  as: "CurrentAddress"
+});
+
+DoctorDetail.belongsTo(Address, {
+  foreignKey: "permanent_address_id",
+  as: "PermanentAddress"
+});
 
 /* =====================================================
    DOMAIN LOOKUP RELATIONS
