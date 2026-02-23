@@ -249,7 +249,7 @@ AdminUserDetails.belongsTo(Address, {
 
 
 /* =====================================================
-   DOMAIN LOOKUP RELATIONS
+  DOMAIN LOOKUP RELATIONS
 ===================================================== */
 
 PatientDetails.belongsTo(DomainLookup, {
