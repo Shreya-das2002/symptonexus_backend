@@ -813,7 +813,14 @@ static async getHomepageDoctors()
           ],
 
           required: true
-        }
+        },
+
+       {
+          model: DoctorDetails,
+          as: "doctor_detail",
+          required: false
+       }
+
 
       ],
 
@@ -834,7 +841,9 @@ static async getHomepageDoctors()
 
       specialization:
         doc.doctor_specializations?.[0]
-        ?.specializationLookup?.domain_name || null
+        ?.specializationLookup?.domain_name || null,
+
+      bio: doc.doctor_detail?.sort_desc || null,
 
     }));
 
