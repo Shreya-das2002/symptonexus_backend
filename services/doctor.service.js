@@ -709,6 +709,7 @@ const result = filteredDoctors.map(doc => ({
     gender: doc.doctor_detail?.genderLookup?.domain_name || null,
     doctor_no: doc.doctor_no,
     licence_number: doc.doctor_detail?.licence_number || null,
+    registration_number: doc.doctor_detail?.registration_number || null,
     experience: doc.doctor_detail?.experience || null,
     specialization:
       doc.doctor_specializations?.[0]?.specializationLookup?.domain_name || null,
