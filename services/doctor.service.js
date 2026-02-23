@@ -519,7 +519,7 @@ static async updateDoctorStatus(doctorId, status, updatedBy) {
           GET DOCTOR LIST (ROLE BASED)
 ===================================================== */
 
-static async getDoctorList(userId, adminId, role)
+static async getDoctorList(userId, adminId, role, specializationId)
 {
   try {
 
@@ -567,7 +567,10 @@ else if (role && role.toLowerCase() === "guest admin") {
   whereCondition.created_by = userId;  
 }
 
-
+/* PATIENT */
+else if (role?.toLowerCase() === "patient") {
+  whereCondition.status = "Active";
+}
 
     /* FETCH DOCTORS */
 
@@ -666,11 +669,9 @@ else if (role && role.toLowerCase() === "guest admin") {
     });
 
 
-
-    /* FILTER FOR STANDARD ADMIN */
-
     let filteredDoctors = doctors;
 
+/* STANDARD ADMIN FILTER */
     if (specializationFilter && specializationFilter.length > 0)
     {
       filteredDoctors =
@@ -682,7 +683,16 @@ else if (role && role.toLowerCase() === "guest admin") {
           )
         );
     }
+ /* PATIENT FILTER */
+    if (role?.toLowerCase() === "patient" && specializationId) {
+      const spId = Number(specializationId);
 
+      filteredDoctors = filteredDoctors.filter(doc =>
+        doc.doctor_specializations?.some(spec =>
+          Number(spec.specialization_id) === spId
+        )
+      );
+    }
 
 
     /* FINAL RESPONSE */

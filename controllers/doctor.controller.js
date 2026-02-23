@@ -174,11 +174,14 @@ class DoctorController {
         req.user.ref_id ||
         null;
 
+        const { specializationId } = req.query;
+
       const result =
         await DoctorService.getDoctorList(
           userId,
           adminId,
-          role
+          role, 
+          specializationId
         );
 
       if (!result || typeof result.success !== "boolean") {
