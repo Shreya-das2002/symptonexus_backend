@@ -3,6 +3,7 @@ const sequelize = require("../config/database");
 /* ================= IMPORT MODELS ================= */
 
 const AdminUser = require("./Admin_user");
+const AdminUserDetails = require('./Admin_user_Details');
 
 const Doctor = require("./Doctor");
 const DoctorDetail = require("./Doctor_Details");
@@ -84,10 +85,21 @@ AdminUser.hasOne(User, {
   as: "user"
 });
 
+
 User.belongsTo(AdminUser, {
   foreignKey: "ref_id",
   targetKey: "admin_user_id",
   as: "admin"
+});
+
+AdminUser.hasOne(AdminUserDetails, {
+  foreignKey: 'admin_user_id',
+  as: 'admin_detail'
+});
+
+AdminUserDetails.belongsTo(AdminUser, {
+  foreignKey: 'admin_user_id',
+  as: 'admin'
 });
 
 User.belongsTo(Role, {
@@ -215,6 +227,27 @@ DoctorDetail.belongsTo(Address, {
   as: "PermanentAddress"
 });
 
+/* ================= Admin ADDRESS RELATION ================= */
+
+Address.hasMany(AdminUserDetails, {
+  foreignKey: "current_address_id"
+});
+
+Address.hasMany(AdminUserDetails, {
+  foreignKey: "permanent_address_id"
+});
+
+AdminUserDetails.belongsTo(Address, {
+  foreignKey: "current_address_id",
+  as: "CurrentAddress"
+});
+
+AdminUserDetails.belongsTo(Address, {
+  foreignKey: "permanent_address_id",
+  as: "PermanentAddress"
+});
+
+
 /* =====================================================
    DOMAIN LOOKUP RELATIONS
 ===================================================== */
@@ -317,6 +350,8 @@ module.exports = {
   sequelize,
 
   AdminUser,
+
+  AdminUserDetails,
 
   User,
 
