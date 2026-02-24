@@ -9,7 +9,7 @@ const applyDoctorController = require("../controllers/applyDoctor.controller");
 router.post(
   "/apply-doctor",
   upload.single("cv"),
-  applyDoctorController.applyDoctor
+  (req, res) => applyDoctorController.applyDoctor(req, res)
 );
 
 module.exports = router;
