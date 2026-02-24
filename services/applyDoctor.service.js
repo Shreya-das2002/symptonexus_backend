@@ -90,13 +90,13 @@ Phone: ${phone}
         to: email,
         subject: "Application Received - Thank You",
         html: `
-          <h2>Thank You, Dr. ${name} 👨‍⚕️</h2>
+          <h2>Dear Dr. ${name}, </h2>
 
-          <p>Your application has been successfully received.</p>
+          <p>Thank you for submitting your application for the position of <b> ${specialization} </b>. We have received your details and the attached resume successfully.</p>
 
-          <p>Our team will review your profile within <b>24–48 hours</b>.</p>
+          <p>Our team will review your profile and contact you shortly regarding the next steps in the selection process. If any additional information or documents are required, we will let you know.</p>
 
-          <p><b>Specialization:</b> ${specialization}</p>
+          <p>Thank you for your interest in joining <b>SymptoNexus</b>. We appreciate your time and look forward to connecting with you.</p>
 
           <br/>
 
