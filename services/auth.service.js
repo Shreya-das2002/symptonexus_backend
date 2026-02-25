@@ -578,20 +578,41 @@ if (role === "patient") {
 if (role === "doctor") {
   profileData = {
     dob: details?.dob || null,
+    gender: details?.genderLookup?.domain_value || null,
+    experience_years: details?.experience_years || null,
+    fees: details?.fees || null,
 
     current_address: {
       address_line_1: details?.current_address?.address_line_1 || null,
+      address_line_2: details?.current_address?.address_line_2 || null,
+      city: details?.current_address?.city || null,
+      district: details?.current_address?.district || null,
+      state: details?.current_address?.state || null,
+      country: details?.current_address?.country || null,
+      pin: details?.current_address?.pin || null
     },
     
     permanent_address: {
       address_line_1: details?.permanent_address?.address_line_1 || null,
+      address_line_2: details?.permanent_address?.address_line_2 || null,
+      city: details?.permanent_address?.city || null,
+      district: details?.permanent_address?.district || null,
+      state: details?.permanent_address?.state || null,
+      country: details?.permanent_address?.country || null,
+      pin: details?.permanent_address?.pin || null
     },
     
     doctor_experiences: {
+      organization_name: details?.doctor_experiences?.organization_name || null,
+      key_experience: details?.doctor_experiences?.key_experience || null,
+      start_date: details?.doctor_experiences?.start_date || null,
+      end_date: details?.doctor_experiences?.end_date || null,
+      experience_desc: details?.doctor_experiences?.experience_desc || null
+     },
 
     }
 
-}}
+}
 
 if (role === "admin") {
   profileData = {
@@ -599,6 +620,12 @@ if (role === "admin") {
 
     current_address: {
       address_line_1: details?.current_address?.address_line_1 || null,
+      address_line_2: details?.current_address?.address_line_2 || null,
+      city: details?.current_address?.city || null,
+      district: details?.current_address?.district || null,
+      state: details?.current_address?.state || null,
+      country: details?.current_address?.country || null,
+      pin: details?.current_address?.pin || null
     },
     
     permanent_address: {
