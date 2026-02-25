@@ -4,7 +4,7 @@ const asyncHandler = require("../utils/asyncHandler");
 class DoctorController {
 
   /* =====================================================
-     CREATE DOCTOR
+    CREATE DOCTOR
   ===================================================== */
   static createDoctor = asyncHandler(async (req, res) => {
     try {
