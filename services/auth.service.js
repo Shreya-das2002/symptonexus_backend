@@ -583,23 +583,23 @@ if (role === "doctor") {
     fees: details?.fees || null,
 
     current_address: {
-      address_line_1: details?.current_address?.address_line_1 || null,
-      address_line_2: details?.current_address?.address_line_2 || null,
-      city: details?.current_address?.city || null,
-      district: details?.current_address?.district || null,
-      state: details?.current_address?.state || null,
-      country: details?.current_address?.country || null,
-      pin: details?.current_address?.pin || null
+      address_line_1: details?.currentAddress?.address_line_1 || null,
+      address_line_2: details?.currentAddress?.address_line_2 || null,
+      city: details?.currentAddress?.city || null,
+      district: details?.currentAddress?.district || null,
+      state: details?.currentAddress?.state || null,
+      country: details?.currentAddress?.country || null,
+      pin: details?.currentAddress?.pin || null
     },
     
     permanent_address: {
-      address_line_1: details?.permanent_address?.address_line_1 || null,
-      address_line_2: details?.permanent_address?.address_line_2 || null,
-      city: details?.permanent_address?.city || null,
-      district: details?.permanent_address?.district || null,
-      state: details?.permanent_address?.state || null,
-      country: details?.permanent_address?.country || null,
-      pin: details?.permanent_address?.pin || null
+      address_line_1: details?.permanentAddress?.address_line_1 || null,
+      address_line_2: details?.permanentAddress?.address_line_2 || null,
+      city: details?.permanentAddress?.city || null,
+      district: details?.permanentAddress?.district || null,
+      state: details?.permanentAddress?.state || null,
+      country: details?.permanentAddress?.country || null,
+      pin: details?.permanentAddress?.pin || null
     },
     
     doctor_experiences: {
@@ -616,20 +616,29 @@ if (role === "doctor") {
 
 if (role === "admin") {
   profileData = {
-    dob: details?.dob || null,
+    dob: profile?.dob || null,
+    gender: profile?.genderLookup?.domain_value || null,
+    department: profile?.department || null,  
+
 
     current_address: {
-      address_line_1: details?.current_address?.address_line_1 || null,
-      address_line_2: details?.current_address?.address_line_2 || null,
-      city: details?.current_address?.city || null,
-      district: details?.current_address?.district || null,
-      state: details?.current_address?.state || null,
-      country: details?.current_address?.country || null,
-      pin: details?.current_address?.pin || null
+      address_line_1: details?.currentAddress?.address_line_1 || null,
+      address_line_2: details?.currentAddress?.address_line_2 || null,
+      city: details?.currentAddress?.city || null,
+      district: details?.currentAddress?.district || null,
+      state: details?.currentAddress?.state || null,
+      country: details?.currentAddress?.country || null,
+      pin: details?.currentAddress?.pin || null
     },
     
     permanent_address: {
-      address_line_1: details?.permanent_address?.address_line_1 || null,
+      address_line_1: details?.permanentAddress?.address_line_1 || null,
+      address_line_2: details?.permanentAddress?.address_line_2 || null,
+      city: details?.permanentAddress?.city || null,
+      district: details?.permanentAddress?.district || null,
+      state: details?.permanentAddress?.state || null,
+      country: details?.permanentAddress?.country || null,
+      pin: details?.permanentAddress?.pin || null
     }
     
 
