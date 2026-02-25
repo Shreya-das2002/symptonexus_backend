@@ -215,8 +215,8 @@ static async login(email, password, roleFromUI) {
     /* ================= PATIENT DETAILS ================= */
 
     let details = null;
-
     
+
     if (role === "patient") {
 
       details = await PatientDetails.findOne({
@@ -263,125 +263,134 @@ static async login(email, password, roleFromUI) {
       });
 
     }
+if (role === "doctor") {
 
+  details = await DoctorDetails.findOne({
 
-        if (role === "doctor") {
+    where: { doctor_id: profile.doctor_id },
 
-      details = await DoctorDetails.findOne({
+    include: [
 
-        where: { doctor_id: profile.doctor_id },
-
-        include: [{
-          model: DomainLookup,
-          as: "genderLookup",
-          attributes: ["domain_value"]
-        },
-        
-    {
-      model: Address,
-      as: "CurrentAddress",
-      attributes: [
-        "address_line_1",
-        "address_line_2",
-        "city",
-        "district",
-        "state",
-        "country",
-        "pin"
-      ]
-    },
-
-    {
-      model: Address,
-      as: "PermanentAddress",
-      attributes: [
-        "address_line_1",
-        "address_line_2",
-        "city",
-        "district",
-        "state",
-        "country",
-        "pin"
-      ]
-    },
-
-    {
-      model: DoctorExperience,
-      as: "doctor_experiences",
-      attributes: [
-        "organization_name",
-        "key_experience",
-        "start_date",
-        "end_date",
-        "experience_desc"
-      ]
-
-    },
-
-    {
-          model: DomainLookup,
-          as: "specializationLookup",
-          attributes: ["domain_value"]
-        },
-
-            {
-          model: DoctorAvailability,
-          as: "availabilities",
-          attributes: ["date", "slot_count", "fees"]
-        },
-
-
-
-
-      ],
-
-      
-
-        transaction: t
-
-      });
-
-    }
-
-
-      if (role === "admin") {
-
-      details = await Admin_user_Details.findOne({
-
-        where: { admin_user_id: profile.admin_user_id },
-        include: [{
-          model: Address,
-          as: "currentAddress",
-          attributes: [
-            "address_line_1",
-            "address_line_2",
-            "city",
-            "district",
-            "state",
-            "country",
-            "pin"
-          ]
-        },
+      /* GENDER */
       {
-          model: Address,
-          as: "permanentAddress",
-          attributes: [
-            "address_line_1",
-            "address_line_2",
-            "city",
-            "district",
-            "state",
-            "country",
-            "pin"
-          ]
-        }
-      
-      ],
+        model: DomainLookup,
+        as: "genderLookup",
+        attributes: ["domain_value"]
+      },
 
-        transaction: t
+      /* ADDRESS */
+      {
+        model: Address,
+        as: "CurrentAddress",
+        attributes: [
+          "address_line_1",
+          "address_line_2",
+          "city",
+          "district",
+          "state",
+          "country",
+          "pin"
+        ]
+      },
 
-      });
+      {
+        model: Address,
+        as: "PermanentAddress",
+        attributes: [
+          "address_line_1",
+          "address_line_2",
+          "city",
+          "district",
+          "state",
+          "country",
+          "pin"
+        ]
+      }
 
+    ],
+
+    transaction: t
+
+  });
+   /* EXPERIENCE */
+  await DoctorExperience.findAll({
+    where: { doctor_id: profile.doctor_id },
+    attributes: [
+      "organization_name",
+      "key_experience",
+      "start_date",
+      "end_date",
+      "experience_desc"
+    ],
+    transaction: t
+  });
+
+  /* SPECIALIZATION */
+  await DoctorSpecialization.findAll({
+    where: { doctor_id: profile.doctor_id },
+    include: [
+      {
+        model: DomainLookup,
+        as: "specializationLookup",
+        attributes: ["domain_value"]
+      }
+    ],
+    transaction: t
+  });
+
+  /* AVAILABILITY */
+  await DoctorAvailability.findAll({
+    where: { doctor_id: profile.doctor_id },
+    attributes: ["date", "slot_count", "fees"],
+    transaction: t
+  });
+
+}
+
+
+if (role.includes("admin")) {
+
+  details = await Admin_user_Details.findOne({
+
+    where: { admin_user_id: profile.admin_user_id },
+
+    include: [
+
+      {
+        model: Address,
+        as: "currentAddress",
+        attributes: [
+          "address_line_1",
+          "address_line_2",
+          "city",
+          "district",
+          "state",
+          "country",
+          "pin"
+        ]
+      },
+
+      {
+        model: Address,
+        as: "permanentAddress",
+        attributes: [
+          "address_line_1",
+          "address_line_2",
+          "city",
+          "district",
+          "state",
+          "country",
+          "pin"
+        ]
+      }
+
+    ],
+
+    transaction: t
+
+  });
+
+}
     /* ================= LOAD MENUS ================= */
 
     const menus = await ControlMaster.findAll({
@@ -423,8 +432,6 @@ const buttons = await ControlMaster.findAll({
   transaction: t
 
 });
-
-      }
 
     /* ================= BUILD USER DATA ================= */
 
@@ -570,10 +577,37 @@ if (role === "patient") {
 
 if (role === "doctor") {
   profileData = {
+    dob: details?.dob || null,
 
+    current_address: {
+      address_line_1: details?.current_address?.address_line_1 || null,
+    },
+    
+    permanent_address: {
+      address_line_1: details?.permanent_address?.address_line_1 || null,
+    },
+    
+    doctor_experiences: {
+
+    }
 
 }}
 
+if (role === "admin") {
+  profileData = {
+    dob: details?.dob || null,
+
+    current_address: {
+      address_line_1: details?.current_address?.address_line_1 || null,
+    },
+    
+    permanent_address: {
+      address_line_1: details?.permanent_address?.address_line_1 || null,
+    }
+    
+
+
+}}
 
 
     await t.commit();
