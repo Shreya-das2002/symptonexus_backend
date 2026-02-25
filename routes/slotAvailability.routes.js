@@ -4,6 +4,6 @@ const router = express.Router();
 const DoctorAvailabilityController = require("../controllers/slotAvailability.controller");
 
 /* ADD / UPDATE SLOT */
-router.post("/slot_booking", DoctorAvailabilityController.upsertSlot);
+router.post("/slot-booking", DoctorAvailabilityController.upsertSlot);
 
 module.exports = router;
