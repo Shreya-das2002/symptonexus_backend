@@ -10,8 +10,14 @@ const Doctor = require("../models/Doctor");
 const Patient = require("../models/patient");
 const Admin = require("../models/Admin_user");
 const Address = require("../models/Address");
-
+const DoctorAvailability = require("../models/Doctor_Availablity");
+const DoctorSpecialization = require("../models/Doctor_Specialization");
+const DoctorDetails = require("../models/Doctor_Details");
+const DoctorExperience = require("../models/Doctor_Experience");
 const PatientDetails = require("../models/Patient_Details");
+const Admin_user_Details = require("../models/Admin_user_Details");
+
+
 const DomainLookup = require("../models/Domain_lookup");
 
 const ControlMaster = require("../models/Control_master");
@@ -210,6 +216,7 @@ static async login(email, password, roleFromUI) {
 
     let details = null;
 
+    
     if (role === "patient") {
 
       details = await PatientDetails.findOne({
@@ -256,6 +263,124 @@ static async login(email, password, roleFromUI) {
       });
 
     }
+
+
+        if (role === "doctor") {
+
+      details = await DoctorDetails.findOne({
+
+        where: { doctor_id: profile.doctor_id },
+
+        include: [{
+          model: DomainLookup,
+          as: "genderLookup",
+          attributes: ["domain_value"]
+        },
+        
+    {
+      model: Address,
+      as: "CurrentAddress",
+      attributes: [
+        "address_line_1",
+        "address_line_2",
+        "city",
+        "district",
+        "state",
+        "country",
+        "pin"
+      ]
+    },
+
+    {
+      model: Address,
+      as: "PermanentAddress",
+      attributes: [
+        "address_line_1",
+        "address_line_2",
+        "city",
+        "district",
+        "state",
+        "country",
+        "pin"
+      ]
+    },
+
+    {
+      model: DoctorExperience,
+      as: "Experiences",
+      attributes: [
+        "organization_name",
+        "key_experience",
+        "start_date",
+        "end_date",
+        "experience_desc"
+      ]
+
+    },
+
+    {
+          model: DomainLookup,
+          as: "specializationLookup",
+          attributes: ["domain_value"]
+        },
+
+            {
+          model: DoctorAvailability,
+          as: "Availabilities",
+          attributes: ["date", "slot_count", "fees"]
+        },
+
+
+
+
+      ],
+
+      
+
+        transaction: t
+
+      });
+
+    }
+
+
+      if (role === "admin") {
+
+      details = await Admin_user_Details.findOne({
+
+        where: { admin_user_id: profile.admin_user_id },
+        include: [{
+          model: Address,
+          as: "currentAddress",
+          attributes: [
+            "address_line_1",
+            "address_line_2",
+            "city",
+            "district",
+            "state",
+            "country",
+            "pin"
+          ]
+        },
+      {
+          model: Address,
+          as: "permanentAddress",
+          attributes: [
+            "address_line_1",
+            "address_line_2",
+            "city",
+            "district",
+            "state",
+            "country",
+            "pin"
+          ]
+        }
+      
+      ],
+
+        transaction: t
+
+      });
 
     /* ================= LOAD MENUS ================= */
 
