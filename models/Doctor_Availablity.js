@@ -24,6 +24,31 @@ const DoctorAvailability = sequelize.define("doctor_availability", {
     allowNull: false
   },
 
+  created_by: {
+    type: DataTypes.INTEGER,
+    allowNull: false
+  },
+
+  created_on: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW
+  },
+
+  updated_on: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW
+  },
+
+  updated_by: {
+    type: DataTypes.INTEGER,
+    allowNull: false
+  },
+
+  fees : {
+    type: DataTypes.FLOAT,
+    allowNull: false
+  },
+
   status: {
     type: DataTypes.INTEGER,
     defaultValue: 1
