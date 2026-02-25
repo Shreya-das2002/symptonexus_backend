@@ -11,7 +11,7 @@ const Patient = require("../models/patient");
 const Admin = require("../models/Admin_user");
 const Address = require("../models/Address");
 const DoctorAvailability = require("../models/Doctor_Availablity");
-const DoctorSpecialization = require("../models/Doctor_Specialization");
+const DoctorSpecialization = require("../models/Doctor_specalization");
 const DoctorDetails = require("../models/Doctor_Details");
 const DoctorExperience = require("../models/Doctor_Experience");
 const PatientDetails = require("../models/Patient_Details");
@@ -307,7 +307,7 @@ static async login(email, password, roleFromUI) {
 
     {
       model: DoctorExperience,
-      as: "Experiences",
+      as: "doctor_experiences",
       attributes: [
         "organization_name",
         "key_experience",
@@ -326,7 +326,7 @@ static async login(email, password, roleFromUI) {
 
             {
           model: DoctorAvailability,
-          as: "Availabilities",
+          as: "availabilities",
           attributes: ["date", "slot_count", "fees"]
         },
 
@@ -461,11 +461,14 @@ const buttons = await ControlMaster.findAll({
         ...userData,
 
         doctor_id: profile.doctor_id,
+        doctor_no: profile.doctor_no,
         first_name: profile.first_name,
         middle_name: profile.middle_name,
         last_name: profile.last_name,
         phone_no: profile.phone_no,
-        gender: ""
+        email: profile.email,
+        gender: details?.genderLookup?.domain_value || "",
+        specialization: details?.specializationLookup?.domain_value || ""
 
       };
 
@@ -483,8 +486,9 @@ const buttons = await ControlMaster.findAll({
         middle_name: profile.middle_name,
         last_name: profile.last_name,
         phone_no: profile.phone_no,
-        gender: profile.gender || "",
-        department_id: profile.department_id || null
+        email: profile.email,
+        gender: profile.genderLookup?.domain_value || "",
+        department: profile.department_id || null
       };
 
     }
@@ -563,6 +567,12 @@ if (role === "patient") {
 
 
 }
+
+if (role === "doctor") {
+  profileData = {
+
+
+}}
 
 
 
