@@ -5,7 +5,7 @@ const Doctor = require("../models/Doctor");
 const DoctorDetails = require("../models/Doctor_Details");
 const DoctorSpecialization = require("../models/Doctor_specalization");
 
-const DoctorExperience = require("../models/Doctor_experience");
+const DoctorExperience = require("../models/Doctor_Experience");
 const User = require("../models/User");
 const Role = require("../models/Role");
 const UserRoleMapping = require("../models/User_role_mapping");

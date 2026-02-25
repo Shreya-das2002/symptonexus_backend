@@ -424,6 +424,8 @@ const buttons = await ControlMaster.findAll({
 
 });
 
+      }
+
     /* ================= BUILD USER DATA ================= */
 
     let userData = {
