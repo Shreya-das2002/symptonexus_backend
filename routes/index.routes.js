@@ -4,7 +4,9 @@ const CreateAdminRoutes = require("./admin.routes");
 const DoctorRoutes = require("./doctor.routes");
 const applyDoctorRoutes = require("./applyDoctor.routes");
 const DoctorProfileRoutes = require("./doctorProfile.routes");
-const SlotAvailableRoutes = require("./slotAvailability.routes")
+const SlotAvailableRoutes = require("./slotAvailability.routes");
+const AdminProfileRoutes = require("./adminProfile.routes");
+
 
 module.exports = (app) => {
   app.use("/api/auth", AuthRoutes);
@@ -14,4 +16,5 @@ module.exports = (app) => {
   app.use("/api", applyDoctorRoutes);
   app.use("/api/doctor", DoctorProfileRoutes);
   app.use("/api/doctor", SlotAvailableRoutes );
+  app.use("/api/admin", AdminProfileRoutes);
 };
