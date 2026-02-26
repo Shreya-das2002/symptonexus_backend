@@ -454,8 +454,10 @@ const buttons = await ControlMaster.findAll({
         middle_name: profile.middle_name,
         last_name: profile.last_name,
         phone_no: profile.phone_no,
-        gender: details?.genderLookup?.domain_value || ""
-
+        gender: details?.genderLookup?.domain_value || "",
+        status: profile.status,
+        created_on: profile.created_on,
+        created_by: profile.created_by
       };
 
     }
@@ -475,7 +477,10 @@ const buttons = await ControlMaster.findAll({
         phone_no: profile.phone_no,
         email: profile.email,
         gender: details?.genderLookup?.domain_value || "",
-        specialization: details?.specializationLookup?.domain_value || ""
+        specialization: details?.specializationLookup?.domain_value || "",
+        status: profile.status,
+        joined_on: profile.created_on,
+        added_by: profile.created_by
 
       };
 
@@ -495,7 +500,10 @@ const buttons = await ControlMaster.findAll({
         phone_no: profile.phone_no,
         email: profile.email,
         gender: profile.genderLookup?.domain_value || "",
-        department: profile.department_id || null
+        department: profile.department_id || null,
+        status: profile.status,
+        joined_on: profile.created_on,
+        added_by: profile.created_by
       };
 
     }
@@ -761,7 +769,27 @@ static async signupPatient(payload) {
     const hashedPassword = await bcrypt.hash(password, 10);
 
 
+    /* ================= GET ROLE ================= */
 
+    const role = await Role.findOne({
+
+      where: { role_name: "patient" },
+      transaction: t
+
+    });
+
+
+    if (!role) {
+
+      await t.rollback();
+
+      return {
+        success: false,
+        message: "Role not found"
+      };
+
+    }
+    
     /* ================= CREATE PATIENT ================= */
 
     const patient = await Patient.create({
@@ -770,7 +798,8 @@ static async signupPatient(payload) {
       middle_name,
       last_name,
       email,
-      phone_no: phone
+      phone_no: phone,
+      created_by: role.role_id
 
     }, { transaction: t });
 
@@ -808,28 +837,6 @@ static async signupPatient(payload) {
 
 
 
-    /* ================= GET ROLE ================= */
-
-    const role = await Role.findOne({
-
-      where: { role_name: "patient" },
-      transaction: t
-
-    });
-
-
-    if (!role) {
-
-      await t.rollback();
-
-      return {
-        success: false,
-        message: "Role not found"
-      };
-
-    }
-
-
 
     /* ================= CREATE USER ================= */
 
@@ -839,7 +846,8 @@ static async signupPatient(payload) {
       password: hashedPassword,
       user_type: role.role_id,
       ref_id: patient.patient_id,
-      status: "Active"
+      status: "Active",
+      created_by: role.role_id
 
     }, { transaction: t });
 
@@ -875,7 +883,8 @@ static async signupPatient(payload) {
     last_name: patient.last_name,
     phone_no: patient.phone_no,
     gender: gender || null,
-    created_on: newUser.created_on
+    created_on: newUser.created_on,
+    created_by: newUser.created_by
   }
 
     };
