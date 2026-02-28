@@ -26,7 +26,7 @@ const DoctorAvailability = sequelize.define("doctor_availability", {
 
   created_by: {
     type: DataTypes.INTEGER,
-    allowNull: false
+    allowNull: true
   },
 
   created_on: {
@@ -36,12 +36,12 @@ const DoctorAvailability = sequelize.define("doctor_availability", {
 
   updated_on: {
     type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW
+    allowNull: true
   },
 
   updated_by: {
     type: DataTypes.INTEGER,
-    allowNull: false
+    allowNull: true
   },
 
   fees : {

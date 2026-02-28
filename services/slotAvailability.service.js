@@ -21,7 +21,7 @@ class DoctorAvailabilityService {
         };
       }
 
-      /* CHECK EXISTING SLOT */
+      /* CHECK EXISTING */
 
       const existing = await DoctorAvailability.findOne({
         where: { doctor_id, date },
@@ -30,7 +30,7 @@ class DoctorAvailabilityService {
 
       let result;
 
-      /* UPDATE CASE */
+      /* UPDATE */
 
       if (existing) {
 
@@ -43,7 +43,7 @@ class DoctorAvailabilityService {
 
       }
 
-      /* CREATE CASE */
+      /* CREATE */
 
       else {
 
@@ -54,7 +54,7 @@ class DoctorAvailabilityService {
           fees,
           status: 1,
           created_by: userId,
-          updated_by: userId
+          created_on: new Date()
         }, { transaction: t });
 
       }

@@ -1,40 +1,25 @@
-const asyncHandler = require("../utils/asyncHandler");
 const DoctorAvailabilityService = require("../services/slotAvailability.service");
+const asyncHandler = require("../utils/asyncHandler");
 
 class DoctorAvailabilityController {
 
-  upsertSlot = asyncHandler(async (req, res) => {
-
+  /* =====================================================
+     UPSERT SLOT (CREATE / UPDATE)
+  ===================================================== */
+  static upsertSlot = asyncHandler(async (req, res) => {
     try {
 
-      /* ================= BODY ================= */
-      const { doctor_id, date, slot_count, fees } = req.body;
+      const payload = req.body;
 
-      if (!doctor_id || !date || !slot_count || !fees) {
-        return res.sendResponse(
-          res.STATUS.BUSINESS_ERROR,
-          "All fields are required",
-          {},
-          "VALIDATION_ERROR",
-          false
-        );
-      }
-
-      /* ================= USER ================= */
+      // Logged-in user
       const userId = req.user?.user_id || null;
 
-      /* ================= SERVICE ================= */
       const result = await DoctorAvailabilityService.upsertSlot(
-        {
-          doctor_id,
-          date,
-          slot_count,
-          fees
-        },
+        payload,
         userId
       );
 
-      /* ================= RESPONSE CHECK ================= */
+      // Defensive check
       if (!result || typeof result.success !== "boolean") {
         return res.sendResponse(
           res.STATUS.INTERNAL_SERVER_ERROR,
@@ -44,21 +29,21 @@ class DoctorAvailabilityController {
         );
       }
 
-      /* ================= BUSINESS ERROR ================= */
+      // Business failure
       if (!result.success) {
         return res.sendResponse(
           res.STATUS.BUSINESS_ERROR,
-          result.message || "Failed to save slot",
+          result.message,
           {},
           result.errorCode || "BUSINESS_ERROR",
           false
         );
       }
 
-      /* ================= SUCCESS ================= */
+      // Success
       return res.sendResponse(
         res.STATUS.SUCCESS,
-        result.message || "Slot saved successfully",
+        result.message || "Slot added successfully",
         result.data || {},
         null,
         true
@@ -70,15 +55,14 @@ class DoctorAvailabilityController {
 
       return res.sendResponse(
         res.STATUS.INTERNAL_SERVER_ERROR,
-        error.message || "Something went wrong. Please try again later.",
+        "Something went wrong. Please try again later.",
         {},
         "SERVER_ERROR"
       );
 
     }
-
   });
 
 }
 
-module.exports = new DoctorAvailabilityController();
+module.exports = DoctorAvailabilityController;
