@@ -11,8 +11,6 @@ class DoctorAvailabilityService {
 
       const { doctor_id, date, slot_count, fees } = payload;
 
-      /* VALIDATION */
-
       if (!doctor_id || !date || !slot_count || !fees) {
         await t.rollback();
         return {
@@ -28,13 +26,11 @@ class DoctorAvailabilityService {
         transaction: t
       });
 
-      let result;
-
       /* UPDATE */
 
       if (existing) {
 
-        result = await existing.update({
+        await existing.update({
           slot_count,
           fees,
           updated_by: userId,
@@ -47,7 +43,7 @@ class DoctorAvailabilityService {
 
       else {
 
-        result = await DoctorAvailability.create({
+        await DoctorAvailability.create({
           doctor_id,
           date,
           slot_count,
@@ -61,12 +57,17 @@ class DoctorAvailabilityService {
 
       await t.commit();
 
+      // ✅ IMPORTANT FIX: fetch full record after create/update
+      const finalData = await DoctorAvailability.findOne({
+        where: { doctor_id, date }
+      });
+
       return {
         success: true,
         message: existing
           ? "Slot updated successfully"
           : "Slot added successfully",
-        data: result
+        data: finalData
       };
 
     } catch (error) {
