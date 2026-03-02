@@ -4,6 +4,7 @@ const bcrypt = require("bcryptjs");
 const Doctor = require("../models/Doctor");
 const DoctorDetails = require("../models/Doctor_Details");
 const DoctorSpecialization = require("../models/Doctor_specalization");
+const DoctorAvailability = require("../models/Doctor_Availablity");
 
 const DoctorExperience = require("../models/Doctor_Experience");
 const User = require("../models/User");
@@ -660,6 +661,16 @@ else if (role?.toLowerCase() === "patient") {
         as: "doctor_experiences",
         required: false
       },
+      
+      {
+        model: DoctorAvailability,
+        as: "availabilities",
+        attributes: [
+          "date",
+          "slot_count",
+          "fees",
+        ]
+      },
 
     
       ],
@@ -746,6 +757,14 @@ const result = filteredDoctors.map(doc => ({
       designation: exp.key_experience,
       responsibilities: exp.experience_desc,
     })) || [],
+
+    doctor_availability: Array.isArray(doc.availabilities)
+  ? doc.availabilities.map(slot => ({
+      date: slot.date,
+      slot_count: slot.slot_count,
+      fees: slot.fees,
+    }))
+    :  [],
 
 
   status: doc.status,
