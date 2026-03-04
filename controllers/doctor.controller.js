@@ -234,16 +234,51 @@ class DoctorController {
 
   //for homepage
 
-  static async getHomepageDoctors(req, res)
-{
-  const result =
-    await DoctorService.getHomepageDoctors();
+ static async getHomepageDoctors(req, res) {
+  try {
 
-  return res.sendResponse(
-    res.STATUS.SUCCESS,
-    "Homepage doctors fetched successfully",
-    result.data
-  );
+    const result =
+      await DoctorService.getHomepageDoctors();
+
+    if (!result || typeof result.success !== "boolean") {
+      return res.sendResponse(
+        res.STATUS.INTERNAL_SERVER_ERROR,
+        "Invalid server response",
+        {},
+        "INVALID_RESPONSE"
+      );
+    }
+
+    if (!result.success) {
+      return res.sendResponse(
+        res.STATUS.BUSINESS_ERROR,
+        result.message || "Failed to fetch homepage doctors",
+        {},
+        result.errorCode || "BUSINESS_ERROR",
+        false
+      );
+    }
+
+    return res.sendResponse(
+      res.STATUS.SUCCESS,
+      "Homepage doctors fetched successfully",
+      result.data || [],
+      null,
+      true
+    );
+
+  } catch (error) {
+
+    console.error("GET HOMEPAGE DOCTORS ERROR:", error);
+
+    return res.sendResponse(
+      res.STATUS.INTERNAL_SERVER_ERROR,
+      "Something went wrong. Please try again later.",
+      {},
+      "SERVER_ERROR"
+    );
+
+  }
 }
 
 }
