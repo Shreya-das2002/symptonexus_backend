@@ -10,7 +10,6 @@ router.post("/create", authMiddleware, DoctorController.createDoctor);
 router.get("/pending-doctors", authMiddleware, DoctorController.getPendingDoctors);
 router.put("/update-status", authMiddleware, DoctorController.updateDoctorStatus);
 router.get("/doctor-list", authMiddleware, DoctorController.getDoctorList);
-router.get("/homepage-doctors", DoctorController.getHomepageDoctors);
 
 
 
