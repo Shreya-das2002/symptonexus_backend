@@ -6,6 +6,8 @@ const applyDoctorRoutes = require("./applyDoctor.routes");
 const DoctorProfileRoutes = require("./doctorProfile.routes");
 const SlotAvailableRoutes = require("./slotAvailability.routes");
 const AdminProfileRoutes = require("./adminProfile.routes");
+const dashboardRoutes = require("./homepageCount.routes");
+
 
 
 module.exports = (app) => {
@@ -17,4 +19,5 @@ module.exports = (app) => {
   app.use("/api/doctor", DoctorProfileRoutes);
   app.use("/api/doctor", SlotAvailableRoutes );
   app.use("/api/admin", AdminProfileRoutes);
+  app.use("/api", dashboardRoutes);
 };

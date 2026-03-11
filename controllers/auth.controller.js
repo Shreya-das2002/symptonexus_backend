@@ -83,7 +83,86 @@ return res.sendResponse(
   }
 });
 
+// ===================== SEND OTP =====================
+static sendOtp = asyncHandler(async (req, res) => {
+
+  const { email, role } = req.body;  
+
+  const result = await AuthService.sendOtp(email, role);
+
+  if (!result || typeof result.success !== "boolean") {
+    return res.sendResponse(
+      res.STATUS.INTERNAL_SERVER_ERROR,
+      "Invalid server response",
+      {}
+    );
+  }
+
+  return res.sendResponse(
+    result.success ? res.STATUS.SUCCESS : res.STATUS.BUSINESS_ERROR,
+    result.message || "",
+    result.data || {},
+    result.errorCode || null
+  );
+
+});
+
+
+  // ===================== VERIFY OTP =====================
+  static verifyOtp = asyncHandler(async (req, res) => {
+
+    const { otp, token } = req.body;
+
+    const result = await AuthService.verifyOtp(otp, token);
+
+    if (!result || typeof result.success !== "boolean") {
+      return res.sendResponse(
+        res.STATUS.INTERNAL_SERVER_ERROR,
+        "Invalid server response",
+        {}
+      );
+    }
+
+    return res.sendResponse(
+      result.success ? res.STATUS.SUCCESS : res.STATUS.BUSINESS_ERROR,
+      result.message || "",
+      result.data || {},
+      result.errorCode || null
+    );
+
+  });
+
+
+  // ===================== RESET PASSWORD =====================
+  static resetPassword = asyncHandler(async (req, res) => {
+
+    const { password, confirmPassword, token } = req.body;
+
+    const result = await AuthService.resetPassword(
+      password,
+      confirmPassword,
+      token
+    );
+
+    if (!result || typeof result.success !== "boolean") {
+      return res.sendResponse(
+        res.STATUS.INTERNAL_SERVER_ERROR,
+        "Invalid server response",
+        {}
+      );
+    }
+
+    return res.sendResponse(
+      result.success ? res.STATUS.SUCCESS : res.STATUS.BUSINESS_ERROR,
+      result.message || "",
+      result.data || {},
+      result.errorCode || null
+    );
+
+  });
 
 }
+
+
 
 module.exports = AuthController;

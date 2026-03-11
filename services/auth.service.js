@@ -1,6 +1,7 @@
 const sequelize = require("../config/database");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const sendEmail = require("../utils/emailService");
 
 const User = require("../models/User");
 const Role = require("../models/Role");
@@ -909,6 +910,266 @@ static async signupPatient(payload) {
 
 }
 
+/* =====================================================
+   GENERATE OTP
+===================================================== */
+
+static generateOtp() {
+
+  return Math.floor(100000 + Math.random() * 900000).toString();
+
+}
+
+
+/* =====================================================
+   SEND OTP
+===================================================== */
+
+static async sendOtp(email, roleFromUI) {
+
+  const t = await sequelize.transaction();
+
+  try {
+
+    const normalizedRole = roleFromUI?.toLowerCase();
+
+    const user = await User.findOne({
+      where: { user_name: email },
+      transaction: t
+    });
+
+    if (!user) {
+
+      await t.rollback();
+
+      return {
+        success: false,
+        message: "Email not registered",
+        errorCode: "USER_NOT_FOUND"
+      };
+    }
+
+    /* ================= GET ROLE ================= */
+
+    const roleMapping = await UserRoleMapping.findOne({
+      where: {
+        user_id: user.user_id,
+        status: 1
+      },
+      include: [{
+        model: Role,
+        as: "Role",
+        attributes: ["role_name"]
+      }],
+      transaction: t
+    });
+
+    if (!roleMapping) {
+
+      await t.rollback();
+
+      return {
+        success: false,
+        message: "Role not assigned"
+      };
+    }
+
+    const actualRole = roleMapping.Role.role_name.toLowerCase();
+
+    /* ================= ROLE VALIDATION ================= */
+
+    if (normalizedRole === "admin") {
+
+      if (!["super admin","standard admin","guest admin"].includes(actualRole)) {
+
+        await t.rollback();
+
+        return {
+          success: false,
+          message: "This account is not registered as admin",
+          errorCode: "ROLE_MISMATCH"
+        };
+
+      }
+
+    } else {
+
+      if (normalizedRole !== actualRole) {
+
+        await t.rollback();
+
+        return {
+          success: false,
+          message: `This account is not registered as ${normalizedRole}`,
+          errorCode: "ROLE_MISMATCH"
+        };
+
+      }
+
+    }
+
+    /* ================= GENERATE OTP ================= */
+
+    const otp = this.generateOtp();
+
+    const token = jwt.sign(
+      { email, otp },
+      process.env.JWT_SECRET,
+      { expiresIn: "5m" }
+    );
+
+    await sendEmail(
+      email,
+      "Password Reset OTP",
+      `Your OTP for password reset is: ${otp}. It will expire in 5 minutes.`
+    );
+
+    await t.commit();
+
+    return {
+      success: true,
+      message: "OTP sent successfully",
+      data: { token }
+    };
+
+  }
+
+  catch (error) {
+
+    await t.rollback();
+
+    console.error("SEND OTP ERROR:", error);
+
+    return {
+      success: false,
+      message: "Failed to send OTP"
+    };
+
+  }
+
+}
+
+/* =====================================================
+   VERIFY OTP
+===================================================== */
+
+static async verifyOtp(otp, token) {
+
+  const t = await sequelize.transaction();
+
+  try {
+
+    if (!token) {
+
+      await t.rollback();
+
+      return {
+        success: false,
+        message: "Token missing"
+      };
+
+    }
+
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET
+    );
+
+    if (decoded.otp !== otp) {
+
+      await t.rollback();
+
+      return {
+        success: false,
+        message: "Invalid OTP"
+      };
+
+    }
+
+    await t.commit();
+
+    return {
+      success: true,
+      email: decoded.email
+    };
+
+  }
+
+  catch (error) {
+
+    await t.rollback();
+
+    return {
+      success: false,
+      message: "OTP verification failed"
+    };
+
+  }
+
+}
+
+/* =====================================================
+   RESET PASSWORD
+===================================================== */
+
+static async resetPassword(password, confirmPassword, token) {
+
+  const t = await sequelize.transaction();
+
+  try {
+
+    if (password !== confirmPassword) {
+
+      await t.rollback();
+
+      return {
+        success: false,
+        message: "Passwords do not match"
+      };
+
+    }
+
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET
+    );
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await User.update(
+
+      { password: hashedPassword },
+
+      {
+        where: { user_name: decoded.email },
+        transaction: t
+      }
+
+    );
+
+    await t.commit();
+
+    return {
+      success: true,
+      message: "Password updated successfully"
+    };
+
+  }
+
+  catch (error) {
+
+    await t.rollback();
+
+    console.error("RESET PASSWORD ERROR:", error);
+
+    return {
+      success: false,
+      message: "Password reset failed"
+    };
+
+  }
+
+}
 
 }
 
