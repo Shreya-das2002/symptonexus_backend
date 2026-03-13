@@ -3,7 +3,7 @@ const sequelize = require("../config/database");
 const User = require("../models/User");
 const Role = require("../models/Role");
 const UserRoleMapping = require("../models/User_role_mapping");
-  const Doctor = require("../models/Doctor");
+  const DoctorSpecialization = require("../models/Doctor_specalization");
   const { fn, col } = require("sequelize");
 
 
@@ -82,7 +82,7 @@ static async getSpecializationWiseDoctorCount() {
 
   try {
 
-    const specializationWiseCount = await Doctor.findAll({
+    const specializationWiseCount = await DoctorSpecialization.findAll({
       attributes: [
         "specialization_id",
         [fn("COUNT", col("doctor_id")), "doctor_count"]
