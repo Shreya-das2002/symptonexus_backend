@@ -3,6 +3,9 @@ const sequelize = require("../config/database");
 const User = require("../models/User");
 const Role = require("../models/Role");
 const UserRoleMapping = require("../models/User_role_mapping");
+  const Doctor = require("../models/Doctor");
+  const { fn, col } = require("sequelize");
+
 
 class DashboardService {
 
@@ -65,6 +68,46 @@ static async getDashboardCount() {
     return {
       success: false,
       message: "Failed to fetch dashboard count"
+    };
+
+  }
+
+}
+
+    /* ================= SPECIALIZATION COUNT ================= */
+
+static async getSpecializationWiseDoctorCount() {
+
+  const t = await sequelize.transaction();
+
+  try {
+
+    const specializationWiseCount = await Doctor.findAll({
+      attributes: [
+        "specialization_id",
+        [fn("COUNT", col("doctor_id")), "doctor_count"]
+      ],
+      group: ["specialization_id"],
+      raw: true,
+      transaction: t
+    });
+
+    await t.commit();
+
+    return {
+      success: true,
+      data: specializationWiseCount
+    };
+
+  } catch (error) {
+
+    await t.rollback();
+
+    console.error("SPECIALIZATION COUNT ERROR:", error);
+
+    return {
+      success: false,
+      message: "Failed to fetch specialization wise doctor count"
     };
 
   }

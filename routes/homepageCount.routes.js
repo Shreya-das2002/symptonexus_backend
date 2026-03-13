@@ -8,5 +8,9 @@ router.get(
   "/dashboard-count",
   DashboardController.getDashboardCount
 );
+router.get(
+  "/specialization-count",
+  DashboardController.getSpecializationWiseDoctorCount
+);
 
 module.exports = router;
