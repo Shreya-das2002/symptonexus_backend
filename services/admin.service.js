@@ -250,113 +250,88 @@ if (createdBy) {
     GET ALL ADMINS
   ===================================================== */
 
-  static async getAllAdmins() {
+ static async getAllAdmins() {
+  try {
 
-    try {
+    const admins = await Admin.findAll({
+      attributes: [
+        "admin_user_id",
+        "first_name",
+        "middle_name",
+        "last_name",
+        "email",
+        "phone_no",
+        "created_on",
+        "status",
+        "department_id"
+      ],
+      include: [
+        {
+          model: User,
+          as: "user",
+          attributes: ["user_id", "user_type"],
+          where: {
+            user_type: [1, 2, 3]
+          },
+          include: [
+            {
+              model: UserRoleMapping,
+              as: "UserRoleMappings",
+              attributes: ["role_id"],
+              include: [
+                {
+                  model: Role,
+                  as: "Role",
+                  attributes: ["role_id", "role_name"]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    });
 
-      const admins = await Admin.findAll({
+    /* ================= FORMAT RESPONSE ================= */
 
-        attributes: [
-          "admin_user_id",
-          "first_name",
-          "middle_name",
-          "last_name",
-          "email",
-          "phone_no",
-          "created_on"
-        ],
-
-        include: [
-          {
-            model: User,
-            as: "user",
-
-            attributes: ["user_id", "user_type"],
-
-            where: {
-              user_type: [1, 2, 3]
-            },
-
-            include: [
-              {
-                model: UserRoleMapping,
-                as: "UserRoleMappings",
-
-                attributes: ["role_id"],
-
-                include: [
-                  {
-                    model: Role,
-                    as: "Role",
-
-                    attributes: ["role_id", "role_name"]
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-
-      });
-
-      
-
-
-      /* =====================================================
-         FORMAT RESPONSE
-      ===================================================== */
-
-      const result = admins.map(admin => ({
-
+    const result = admins.map((admin) => {
+      return {
         admin_user_id: admin.admin_user_id,
-
         first_name: admin.first_name,
         middle_name: admin.middle_name,
         last_name: admin.last_name,
-
         email: admin.email,
-
         phone_no: admin.phone_no,
 
         role:
-          admin.user?.UserRoleMappings?.[0]?.Role?.role_name
-          || "Unknown",
+          admin.user?.UserRoleMappings?.[0]?.Role?.role_name ||
+          "Unknown",
 
-        department_id:
-    admin.department_id
-      ? admin.department_id.split(",").map(Number)
-      : [],
+        department_id: admin.department_id
+          ? admin.department_id.split(",").map(id => Number(id.trim()))
+          : [],
 
         created_on: admin.created_on
-
-      }));
-
-
-      return {
-
-        success: true,
-
-        data: result
-
+  ? admin.created_on.toISOString().split("T")[0]
+  : null,
+        status: admin.status
       };
+    });
 
-    }
+    return {
+      success: true,
+      data: result
+    };
 
-    catch (error) {
+  } catch (error) {
 
-      console.error("GET ADMINS ERROR:", error);
+    console.error("GET ADMINS ERROR:", error);
 
-      return {
-
-        success: false,
-
-        message: error.message
-
-      };
-
-    }
-
+    return {
+      success: false,
+      message: error.message
+    };
   }
+}
 
 
 }
