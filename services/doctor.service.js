@@ -772,7 +772,9 @@ const result = filteredDoctors.map(doc => ({
 
 
   status: doc.status,
-  created_on: doc.created_on,
+   created_on: doc.created_on
+  ? doc.created_on.toISOString().split("T")[0]
+  : null,
   created_by: doc.created_by
 
 
