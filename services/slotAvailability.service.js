@@ -9,9 +9,9 @@ class DoctorAvailabilityService {
 
     try {
 
-      const { doctor_id, date, slot_count, fees } = payload;
+      const { doctor_id, date, start_time, end_time, slot_count, fees } = payload;
 
-      if (!doctor_id || !date || !slot_count || !fees) {
+      if (!doctor_id || !date || !start_time || !end_time || !slot_count || !fees) {
         await t.rollback();
         return {
           success: false,
@@ -33,6 +33,8 @@ class DoctorAvailabilityService {
         await existing.update({
           slot_count,
           fees,
+          start_time,
+          end_time,
           updated_by: userId,
           updated_on: new Date()
         }, { transaction: t });
@@ -46,6 +48,8 @@ class DoctorAvailabilityService {
         await DoctorAvailability.create({
           doctor_id,
           date,
+          start_time,
+          end_time,
           slot_count,
           fees,
           status: 1,
@@ -57,7 +61,7 @@ class DoctorAvailabilityService {
 
       await t.commit();
 
-      // ✅ IMPORTANT FIX: fetch full record after create/update
+      // fetch full record after create/update
       const finalData = await DoctorAvailability.findOne({
         where: { doctor_id, date }
       });

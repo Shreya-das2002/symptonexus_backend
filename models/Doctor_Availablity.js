@@ -19,6 +19,17 @@ const DoctorAvailability = sequelize.define("doctor_availability", {
     allowNull: false
   },
 
+  start_time: {
+    type: DataTypes.TIME,
+    allowNull: false
+  },
+
+  end_time: {
+    type: DataTypes.TIME,
+    allowNull: false
+  },
+
+
   slot_count: {
     type: DataTypes.INTEGER,
     allowNull: false

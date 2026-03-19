@@ -669,6 +669,8 @@ else if (role?.toLowerCase() === "patient") {
           "date",
           "slot_count",
           "fees",
+          "start_time",
+          "end_time"
         ]
       },
 
@@ -763,6 +765,8 @@ const result = filteredDoctors.map(doc => ({
       date: slot.date,
       slot_count: slot.slot_count,
       fees: slot.fees,
+      start_time: slot.start_time,
+      end_time: slot.end_time
     }))
     :  [],
 
