@@ -76,6 +76,20 @@ DoctorAvailability.belongsTo(Doctor, {
 });
 
 /* =====================================================
+   APPOINTMENT → DOCTOR AVAILABILITY (NEW)
+===================================================== */
+
+DoctorAvailability.hasMany(Appointment, {
+  foreignKey: "doctor_availability_id",
+  as: "appointments"
+});
+
+Appointment.belongsTo(DoctorAvailability, {
+  foreignKey: "doctor_availability_id",
+  as: "availability"
+});
+
+/* =====================================================
    ADMIN USER → USER
 ===================================================== */
 
