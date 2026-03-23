@@ -5,8 +5,9 @@ const bcrypt = require("bcryptjs");
 
 const User = require("../models/User");
 const Admin = require("../models/Admin_user");
+const AdminUserDetails = require("../models/Admin_user_Details");
+const Address = require("../models/Address");
 const DomainLookup = require("../models/Domain_lookup");
-
 const Role = require("../models/Role");
 const UserRoleMapping = require("../models/User_role_mapping");
 
@@ -14,7 +15,7 @@ const UserRoleMapping = require("../models/User_role_mapping");
 class AdminService {
 
   /* =====================================================
-     CREATE ADMIN (ONLY ROLE 2 AND 3 ALLOWED)
+      CREATE ADMIN (ONLY ROLE 2 AND 3 ALLOWED)
   ===================================================== */
 
   static async createAdmin(payload, createdBy = null) {
@@ -287,9 +288,46 @@ if (createdBy) {
               ]
             }
           ]
-        }
+        },
+
+          {
+            model: AdminUserDetails,
+            as: "admin_detail",
+            include: [
+              {
+      model: Address,
+      as: "currentAddress",
+      attributes: [
+        "address_line_1",
+        "address_line_2",
+        "city",
+        "district",
+        "state",
+        "country",
+        "pin"
       ]
-    });
+    },
+
+    {
+      model: Address,
+      as: "permanentAddress",
+      attributes: [
+        "address_line_1",
+        "address_line_2",
+        "city",
+        "district",
+        "state",
+        "country",
+        "pin"
+      ]
+      }
+            ]
+        }
+
+      ]
+
+
+      });
 
     /* ================= FORMAT RESPONSE ================= */
 
@@ -313,7 +351,26 @@ if (createdBy) {
         created_on: admin.created_on
   ? admin.created_on.toISOString().split("T")[0]
   : null,
-        status: admin.status
+        status: admin.status,
+
+        current_address: {
+      address_line_1: admin.admin_detail?.currentAddress?.address_line_1 || null,
+      address_line_2: admin.admin_detail?.currentAddress?.address_line_2 || null,
+      city: admin.admin_detail?.currentAddress?.city || null,
+      district: admin.admin_detail?.currentAddress?.district || null,
+      state: admin.admin_detail?.currentAddress?.state || null,
+      country: admin.admin_detail?.currentAddress?.country || null,
+      pin: admin.admin_detail?.currentAddress?.pin || null
+        },
+        permanet_address: {
+      address_line_1: admin.admin_detail?.permanentAddress?.address_line_1 || null,
+      address_line_2: admin.admin_detail?.permanentAddress?.address_line_2 || null,
+      city: admin.admin_detail?.permanentAddress?.city || null,
+      district: admin.admin_detail?.permanentAddress?.district || null,
+      state: admin.admin_detail?.permanentAddress?.state || null,
+      country: admin.admin_detail?.permanentAddress?.country || null,
+      pin: admin.admin_detail?.permanentAddress?.pin || null
+        }
       };
     });
 
