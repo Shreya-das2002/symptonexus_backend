@@ -290,6 +290,14 @@ if (createdBy) {
           ]
         },
 
+            {
+              model: DomainLookup,
+              as: "genderLookup",
+              attributes: ["domain_name"],
+              where: { domain_type: "gender" },
+              required: false
+            },
+
           {
             model: AdminUserDetails,
             as: "admin_detail",
@@ -339,6 +347,8 @@ if (createdBy) {
         last_name: admin.last_name,
         email: admin.email,
         phone_no: admin.phone_no,
+
+        gender: admin?.genderLookup?.domain_name || null,
 
         role:
           admin.user?.UserRoleMappings?.[0]?.Role?.role_name ||

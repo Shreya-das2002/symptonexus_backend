@@ -143,6 +143,12 @@ DoctorDetail.belongsTo(DomainLookup, {
   as: "genderLookup"
 });
 
+AdminUser.belongsTo(DomainLookup, {
+  foreignKey: "gender",
+  targetKey: "domain_value",
+  as: "genderLookup"
+});
+
 DoctorSpecialization.belongsTo(DomainLookup, {
   foreignKey: "specialization_id",
   targetKey: "domain_value",
