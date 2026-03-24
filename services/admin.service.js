@@ -401,8 +401,7 @@ if (createdBy) {
 }
 
   /* Admin status Update */ 
-  
-static async deactivateAdmin(admin_user_id) {
+static async deactivateAdmin(admin_user_id, updatedBy = null) {
   const t = await sequelize.transaction();
 
   try {
@@ -414,15 +413,7 @@ static async deactivateAdmin(admin_user_id) {
       };
     }
 
-    const admin = await Admin.findByPk(admin_user_id, {
-      include: [
-        {
-          model: User,
-          as: "user"
-        }
-      ],
-      transaction: t
-    });
+    const admin = await Admin.findByPk(admin_user_id, { transaction: t });
 
     if (!admin) {
       await t.rollback();
@@ -441,15 +432,27 @@ static async deactivateAdmin(admin_user_id) {
     }
 
     await admin.update(
-      { status: "Inactive" },
+      {
+        status: "Inactive",
+        updated_by: updatedBy
+      },
       { transaction: t }
     );
 
-    if (admin.user) {
-      await admin.user.update(
-        { status: "Inactive" },
-        { transaction: t }
-      );
+    const [updatedUserCount] = await User.update(
+      { status: "Inactive" },
+      {
+        where: { ref_id: admin_user_id },
+        transaction: t
+      }
+    );
+
+    if (updatedUserCount === 0) {
+      await t.rollback();
+      return {
+        success: false,
+        message: "User status update failed"
+      };
     }
 
     await t.commit();
@@ -459,6 +462,10 @@ static async deactivateAdmin(admin_user_id) {
       message: "Admin deactivated successfully",
       data: {
         admin_user_id: admin.admin_user_id,
+        first_name: admin.first_name,
+        middle_name: admin.middle_name,
+        last_name: admin.last_name,
+        email: admin.email,
         status: "Inactive"
       }
     };
