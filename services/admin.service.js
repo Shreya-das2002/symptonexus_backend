@@ -400,6 +400,81 @@ if (createdBy) {
   }
 }
 
+  /* Admin status Update */ 
+  
+static async deactivateAdmin(admin_user_id) {
+  const t = await sequelize.transaction();
+
+  try {
+    if (!admin_user_id) {
+      await t.rollback();
+      return {
+        success: false,
+        message: "admin_user_id is required"
+      };
+    }
+
+    const admin = await Admin.findByPk(admin_user_id, {
+      include: [
+        {
+          model: User,
+          as: "user"
+        }
+      ],
+      transaction: t
+    });
+
+    if (!admin) {
+      await t.rollback();
+      return {
+        success: false,
+        message: "Admin not found"
+      };
+    }
+
+    if (admin.status === "Inactive") {
+      await t.rollback();
+      return {
+        success: false,
+        message: "Admin is already inactive"
+      };
+    }
+
+    await admin.update(
+      { status: "Inactive" },
+      { transaction: t }
+    );
+
+    if (admin.user) {
+      await admin.user.update(
+        { status: "Inactive" },
+        { transaction: t }
+      );
+    }
+
+    await t.commit();
+
+    return {
+      success: true,
+      message: "Admin deactivated successfully",
+      data: {
+        admin_user_id: admin.admin_user_id,
+        status: "Inactive"
+      }
+    };
+  } catch (error) {
+    if (t && !t.finished) {
+      await t.rollback();
+    }
+
+    console.error("DEACTIVATE ADMIN ERROR:", error);
+
+    return {
+      success: false,
+      message: error.message
+    };
+  }
+}
 
 }
 

@@ -7,4 +7,6 @@ router.post("/create", authMiddleware,  AdminController.createAdmin);
 
 router.get("/alladmins", AdminController.getAllAdmins);
 
+router.put("/deactivate-admin", authMiddleware, AdminController.deactivateAdmin);
+
 module.exports = router;

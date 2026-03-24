@@ -124,6 +124,59 @@ class AdminController {
 
   });
 
+  /* ===================== DEACTIVATE ADMIN ===================== */
+  
+static deactivateAdmin = asyncHandler(async (req, res) => {
+
+  try {
+
+    /* CHECK ONLY SUPER ADMIN CAN DEACTIVATE ADMIN */
+    if (!req.user.role || req.user.role.toLowerCase() !== "super admin") {
+      return res.sendResponse(
+        res.STATUS.UNAUTHORIZED,
+        "Only Super Admin can deactivate admin",
+        {},
+        "UNAUTHORIZED"
+      );
+    }
+
+    const { admin_user_id } = req.body;
+
+    const result = await AdminService.deactivateAdmin(admin_user_id);
+
+    if (!result.success) {
+      return res.sendResponse(
+        res.STATUS.BUSINESS_ERROR,
+        result.message,
+        {},
+        result.errorCode || "BUSINESS_ERROR",
+        false
+      );
+    }
+
+    return res.sendResponse(
+      res.STATUS.SUCCESS,
+      result.message,
+      result.data,
+      null,
+      true
+    );
+
+  } catch (error) {
+
+    console.error("DEACTIVATE ADMIN CONTROLLER ERROR:", error);
+
+    return res.sendResponse(
+      res.STATUS.INTERNAL_SERVER_ERROR,
+      "Something went wrong",
+      {},
+      "SERVER_ERROR"
+    );
+
+  }
+
+});
+
 }
 
 module.exports = AdminController;
