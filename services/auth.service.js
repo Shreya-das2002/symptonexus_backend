@@ -193,6 +193,16 @@ static async login(email, password, roleFromUI) {
       profile = await Admin.findOne({
 
         where: { admin_user_id: user.ref_id },
+        where: { admin_user_id: user.ref_id },
+  include: [
+        {
+          model: DomainLookup,
+          as: "genderLookup",
+          attributes: ["domain_name"],
+          where: { domain_type: "gender" },
+          required: false
+        }
+      ],
         transaction: t
 
       });
@@ -224,10 +234,13 @@ static async login(email, password, roleFromUI) {
 
         where: { patient_id: profile.patient_id },
 
-        include: [{
+         include: [
+        {
           model: DomainLookup,
           as: "genderLookup",
-          attributes: ["domain_value"]
+          attributes: ["domain_name"],
+          where: { domain_type: "gender" },
+          required: false
         },
         
     {
@@ -270,14 +283,14 @@ if (role === "doctor") {
 
     where: { doctor_id: profile.doctor_id },
 
-    include: [
-
-      /* GENDER */
-      {
-        model: DomainLookup,
-        as: "genderLookup",
-        attributes: ["domain_value"]
-      },
+     include: [
+        {
+          model: DomainLookup,
+          as: "genderLookup",
+          attributes: ["domain_name"],
+          where: { domain_type: "gender" },
+          required: false
+        },
 
       /* ADDRESS */
       {
@@ -455,7 +468,7 @@ const buttons = await ControlMaster.findAll({
         middle_name: profile.middle_name,
         last_name: profile.last_name,
         phone_no: profile.phone_no,
-        gender: details?.genderLookup?.domain_value || "",
+        gender: details?.genderLookup?.domain_name || "",
         status: profile.status,
         created_on: profile.created_on,
         created_by: profile.created_by
@@ -477,7 +490,7 @@ const buttons = await ControlMaster.findAll({
         last_name: profile.last_name,
         phone_no: profile.phone_no,
         email: profile.email,
-        gender: details?.genderLookup?.domain_value || "",
+        gender: details?.genderLookup?.domain_name || "",
         specialization: details?.specializationLookup?.domain_value || "",
         status: profile.status,
         joined_on: profile.created_on,
@@ -500,7 +513,8 @@ const buttons = await ControlMaster.findAll({
         last_name: profile.last_name,
         phone_no: profile.phone_no,
         email: profile.email,
-        gender: profile.genderLookup?.domain_value || "",
+        dob: details?.dob || null,
+        gender: profile.genderLookup?.domain_name || "",
         department: profile.department_id || null,
         status: profile.status,
         joined_on: profile.created_on,
@@ -623,12 +637,8 @@ if (role === "doctor") {
 
 }
 
-if (role === "admin") {
+if (role.includes("admin")) {
   profileData = {
-    dob: profile?.dob || null,
-    gender: profile?.genderLookup?.domain_value || null,
-    department: profile?.department || null,  
-
 
     current_address: {
       address_line_1: details?.currentAddress?.address_line_1 || null,
