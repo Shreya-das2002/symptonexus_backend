@@ -232,6 +232,59 @@ class DoctorController {
 
   });
 
+  /* ===================== DEACTIVATE ADMIN ===================== */
+  
+static deactivateDoctor = asyncHandler(async (req, res) => {
+
+  try {
+
+    /* CHECK ONLY SUPER ADMIN CAN DEACTIVATE ADMIN */
+    if (!req.user.role || req.user.role.toLowerCase() !== "standard admin") {
+      return res.sendResponse(
+        res.STATUS.UNAUTHORIZED,
+        "Only Standard Admin can deactivate admin",
+        {},
+        "UNAUTHORIZED"
+      );
+    }
+
+    const { doctor_id } = req.body;
+    const updatedBy = req.user.user_id;
+
+    const result = await DoctorService.deactivateDoctor(doctor_id, updatedBy);
+
+    if (!result.success) {
+      return res.sendResponse(
+        res.STATUS.BUSINESS_ERROR,
+        result.message,
+        {},
+        result.errorCode || "BUSINESS_ERROR",
+        false
+      );
+    }
+
+    return res.sendResponse(
+      res.STATUS.SUCCESS,
+      result.message,
+      result.data,
+      null,
+      true
+    );
+
+  } catch (error) {
+
+    console.error("DEACTIVATE ADMIN CONTROLLER ERROR:", error);
+
+    return res.sendResponse(
+      res.STATUS.INTERNAL_SERVER_ERROR,
+      "Something went wrong",
+      {},
+      "SERVER_ERROR"
+    );
+
+  }
+
+});
 
 }
 

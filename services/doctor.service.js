@@ -466,7 +466,8 @@ static async updateDoctorStatus(doctorId, status, updatedBy) {
 
       status,
       doctor_no: doctorNo,
-      updated_by: updatedBy
+      updated_by: updatedBy,
+      updated_on: new Date()
 
     }, { transaction: t });
 
@@ -497,7 +498,9 @@ static async updateDoctorStatus(doctorId, status, updatedBy) {
       middle_name: doctor.middle_name,
       last_name: doctor.last_name,
       email: doctor.email,
-      status: doctor.status
+      status: doctor.status,
+      updated_by: doctor.updated_by,
+      updated_on: doctor.updated_on
       }
     };
 
@@ -791,6 +794,93 @@ const result = filteredDoctors.map(doc => ({
   catch (error)
   {
     console.error("GET DOCTOR LIST ERROR:", error);
+
+    return {
+      success: false,
+      message: error.message
+    };
+  }
+}
+
+ /* doctor status deactive */ 
+
+static async deactivateDoctor(doctor_id, updatedBy) {
+  const t = await sequelize.transaction();
+
+  try {
+    if (!doctor_id) {
+      await t.rollback();
+      return {
+        success: false,
+        message: "doctor_id is required"
+      };
+    }
+
+    const doctor = await Doctor.findByPk(doctor_id, { transaction: t });
+
+    if (!doctor) {
+      await t.rollback();
+      return {
+        success: false,
+        message: "Doctor not found"
+      };
+    }
+
+    if (doctor.status === "Inactive") {
+      await t.rollback();
+      return {
+        success: false,
+        message: "Doctor is already inactive"
+      };
+    }
+
+    await doctor.update(
+      {
+        status: "Inactive",
+        updated_by: updatedBy,
+        updated_on: new Date(),
+      },
+      { transaction: t }
+    );
+
+    const [updatedUserCount] = await User.update(
+      { status: "Inactive" },
+      {
+        where: { ref_id: doctor_id },
+        transaction: t
+      }
+    );
+
+    if (updatedUserCount === 0) {
+      await t.rollback();
+      return {
+        success: false,
+        message: "User status update failed"
+      };
+    }
+
+    await t.commit();
+
+    return {
+      success: true,
+      message: "Doctor deactivated successfully",
+      data: {
+        doctor_id: doctor.doctor_id,
+        first_name: doctor.first_name,
+        middle_name: doctor.middle_name,
+        last_name: doctor.last_name,
+        email: doctor.email,
+        status: doctor.status,
+        updated_by: doctor.updated_by,
+        updated_on: doctor.updated_on
+      }
+    };
+  } catch (error) {
+    if (t && !t.finished) {
+      await t.rollback();
+    }
+
+    console.error("DEACTIVATE DOCTOR ERROR:", error);
 
     return {
       success: false,

@@ -36,7 +36,21 @@ const Doctor = sequelize.define('doctor', {
         defaultValue: DataTypes.NOW
     },
 
-    created_by: DataTypes.STRING
+    created_by: DataTypes.STRING,
+     updated_on: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+
+  updated_by: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
+
+  updated_on: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
 
 }, {
     tableName: 'doctors',

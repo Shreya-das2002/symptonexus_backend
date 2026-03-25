@@ -466,7 +466,7 @@ static async deactivateAdmin(admin_user_id, updatedBy = null) {
         middle_name: admin.middle_name,
         last_name: admin.last_name,
         email: admin.email,
-        status: "Inactive"
+        status: admin.status
       }
     };
   } catch (error) {
