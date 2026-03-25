@@ -1,6 +1,7 @@
 const AdminUser = require("../models/Admin_user");
 const AdminUserDetails = require("../models/Admin_user_Details");
 const Address = require("../models/Address");
+const User = require("../models/User");
 const sequelize = require("../config/database");
 
 /* ================= ADDRESS BUILDER ================= */
@@ -20,6 +21,19 @@ const buildAddress = (addr) => {
   };
 };
 
+/* ================= STATUS NORMALIZER ================= */
+
+const normalizeStatus = (status) => {
+  if (!status) return null;
+
+  const value = String(status).trim().toLowerCase();
+
+  if (value === "active") return "Active";
+  if (value === "inactive") return "Inactive";
+
+  return null;
+};
+
 /* ================= SERVICE ================= */
 
 class AdminProfileService {
@@ -30,12 +44,24 @@ class AdminProfileService {
       const {
         admin_user_id,
         dob,
+        status,
         current_address,
         permanent_address,
       } = payload;
 
       if (!admin_user_id) {
         throw new Error("ADMIN_USER_ID_REQUIRED");
+      }
+
+      /* ================= CHECK ADMIN EXISTS ================= */
+
+      const adminUser = await AdminUser.findOne({
+        where: { admin_user_id },
+        transaction: t,
+      });
+
+      if (!adminUser) {
+        throw new Error("ADMIN_NOT_FOUND");
       }
 
       /* ================= EXISTING DETAILS ================= */
@@ -45,24 +71,23 @@ class AdminProfileService {
         transaction: t,
       });
 
-      let currentAddressId =
-        existingDetails?.current_address_id ?? null;
-
-      let permanentAddressId =
-        existingDetails?.permanent_address_id ?? null;
+      let currentAddressId = existingDetails?.current_address_id ?? null;
+      let permanentAddressId = existingDetails?.permanent_address_id ?? null;
 
       /* ================= CURRENT ADDRESS ================= */
 
       if (current_address) {
-        const data = buildAddress(current_address);
+        const currentAddressData = buildAddress(current_address);
 
         if (currentAddressId) {
-          await Address.update(data, {
+          await Address.update(currentAddressData, {
             where: { address_id: currentAddressId },
             transaction: t,
           });
         } else {
-          const addr = await Address.create(data, { transaction: t });
+          const addr = await Address.create(currentAddressData, {
+            transaction: t,
+          });
           currentAddressId = addr.address_id;
         }
       }
@@ -70,35 +95,79 @@ class AdminProfileService {
       /* ================= PERMANENT ADDRESS ================= */
 
       if (permanent_address) {
-        const data = buildAddress(permanent_address);
+        const permanentAddressData = buildAddress(permanent_address);
 
         if (permanentAddressId) {
-          await Address.update(data, {
+          await Address.update(permanentAddressData, {
             where: { address_id: permanentAddressId },
             transaction: t,
           });
         } else {
-          const addr = await Address.create(data, { transaction: t });
+          const addr = await Address.create(permanentAddressData, {
+            transaction: t,
+          });
           permanentAddressId = addr.address_id;
         }
       }
 
+      /* ================= DOB HANDLING ================= */
+
+
+      const hasValidDob = !!(dob && dob !== "" && dob !== "Invalid date");
+
+      /* ================= STATUS HANDLING ================= */
+      // Accepts: Active / Inactive / active / inactive
+
+      const normalizedStatus = normalizeStatus(status);
+
+      if (status && !normalizedStatus) {
+        throw new Error("INVALID_STATUS");
+      }
+
+      /* ================= SAVE ADMIN STATUS ================= */
+
+      if (normalizedStatus) {
+        await AdminUser.update(
+          { status: normalizedStatus },
+          {
+            where: { admin_user_id },
+            transaction: t,
+          }
+        );
+
+        await User.update(
+          { status: normalizedStatus },
+          {
+            where: { ref_id: admin_user_id },
+            transaction: t,
+          }
+        );
+      }
+
       /* ================= SAVE DETAILS ================= */
 
-      const data = {
-        dob,
+      const detailsData = {
         current_address_id: currentAddressId,
         permanent_address_id: permanentAddressId,
       };
 
+      if (hasValidDob) {
+        detailsData.dob = dob;
+      }
+
       if (existingDetails) {
-        await AdminUserDetails.update(data, {
+        await AdminUserDetails.update(detailsData, {
           where: { admin_user_id },
           transaction: t,
         });
       } else {
         await AdminUserDetails.create(
-          { admin_user_id, ...data },
+          {
+            admin_user_id,
+            dob: hasValidDob ? dob : null,
+            current_address_id: currentAddressId,
+            permanent_address_id: permanentAddressId,
+          },
           { transaction: t }
         );
       }
@@ -112,6 +181,16 @@ class AdminProfileService {
 
       const details = await AdminUserDetails.findOne({
         where: { admin_user_id },
+        include: [
+          {
+            model: Address,
+            as: "currentAddress",
+          },
+          {
+            model: Address,
+            as: "permanentAddress",
+          },
+        ],
         transaction: t,
       });
 
@@ -119,13 +198,13 @@ class AdminProfileService {
 
       return {
         success: true,
-        user: user.toJSON(),
-        profile: details.toJSON(),
+        message: "Admin profile updated successfully",
+        user: user?.toJSON() || null,
+        profile: details?.toJSON() || null,
       };
-
     } catch (error) {
       await t.rollback();
-      throw error;
+      
     }
   }
 }
