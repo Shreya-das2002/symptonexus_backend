@@ -73,6 +73,13 @@ static async login(email, password, roleFromUI) {
 
     }
 
+if (user.status !== "Active") {
+  await t.rollback();
+  return {
+    success: false,
+    message: `Your account is ${String(user.status).toLowerCase()}. Login is not allowed.`
+  };
+}
 
 
     /* ================= PASSWORD CHECK ================= */
@@ -221,6 +228,13 @@ static async login(email, password, roleFromUI) {
 
     }
 
+if (profile.status !== "Active") {
+  await t.rollback();
+  return {
+    success: false,
+    message: `Your account is ${String(profile.status).toLowerCase()}. Login is not allowed.`
+  };
+}
 
 
     /* ================= PATIENT DETAILS ================= */
