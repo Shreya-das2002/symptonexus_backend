@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
+const User = require("../models/User");
 
-module.exports = (req, res, next) => {
+module.exports = async (req, res, next) => {
   try {
     /* ================= HEADER CHECK ================= */
     const authHeader = req.headers.authorization;
@@ -47,6 +48,27 @@ module.exports = (req, res, next) => {
       return res.sendResponse(
         res.STATUS.UNAUTHORIZED,
         "Invalid admin token"
+      );
+    }
+
+/* ================= USER STATUS CHECK FROM DB ================= */
+    const user = await User.findByPk(decoded.user_id); 
+
+    if (!user) {
+      return res.sendResponse(
+        res.STATUS.UNAUTHORIZED,
+        "User not found",
+        {},
+        "USER_NOT_FOUND"
+      );
+    }
+
+    if (user.status !== "Active") {
+      return res.sendResponse(
+        res.STATUS.UNAUTHORIZED,
+        "Account is inactive. Please login again.",
+        {},
+        "ACCOUNT_INACTIVE"
       );
     }
 

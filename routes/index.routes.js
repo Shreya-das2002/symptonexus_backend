@@ -7,6 +7,7 @@ const DoctorProfileRoutes = require("./doctorProfile.routes");
 const SlotAvailableRoutes = require("./slotAvailability.routes");
 const AdminProfileRoutes = require("./adminProfile.routes");
 const dashboardRoutes = require("./homepageCount.routes");
+const accountRoutes = require("./accountDelete.routes");
 
 
 
@@ -20,4 +21,5 @@ module.exports = (app) => {
   app.use("/api/doctor", SlotAvailableRoutes );
   app.use("/api/admin", AdminProfileRoutes);
   app.use("/api", dashboardRoutes);
+  app.use("/api/account", accountRoutes);
 };
