@@ -507,7 +507,9 @@ const buttons = await ControlMaster.findAll({
         gender: details?.genderLookup?.domain_name || "",
         specialization: details?.specializationLookup?.domain_value || "",
         status: profile.status,
-        joined_on: profile.created_on,
+        created_on: profile.created_on
+  ? profile.created_on.toISOString().split("T")[0]
+  : null,
         added_by: profile.created_by
 
       };
