@@ -763,16 +763,17 @@ const result = filteredDoctors.map(doc => ({
       responsibilities: exp.experience_desc,
     })) || [],
 
-    doctor_availability: Array.isArray(doc.availabilities)
-  ? doc.availabilities.map(slot => ({
-      date: slot.date,
-      slot_count: slot.slot_count,
-      fees: slot.fees,
-      start_time: slot.start_time,
-      end_time: slot.end_time
-    }))
-    :  [],
-
+     doctor_availability: Array.isArray(doc.availabilities)
+    ? doc.availabilities.reduce((acc, slot) => {
+        acc[slot.date] = {
+          slot_count: slot.slot_count,
+          fees: slot.fees,
+          start_time: slot.start_time,
+          end_time: slot.end_time
+        };
+        return acc;
+      }, {})
+    : {},
 
   status: doc.status,
    created_on: doc.created_on
