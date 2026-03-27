@@ -240,7 +240,10 @@ if (profile.status !== "Active") {
     /* ================= PATIENT DETAILS ================= */
 
     let details = null;
-    
+    let specialization = null;
+    let doctorExperiences = [];
+    let doctorAvailabilities = [];
+        
 
     if (role === "patient") {
 
@@ -362,14 +365,16 @@ if (role === "doctor") {
   });
 
   /* SPECIALIZATION */
-  await DoctorSpecialization.findAll({
+  specialization = await DoctorSpecialization.findOne({
     where: { doctor_id: profile.doctor_id },
     include: [
       {
-        model: DomainLookup,
-        as: "specializationLookup",
-        attributes: ["domain_value"]
-      }
+          model: DomainLookup,
+          as: "specializationLookup",
+          attributes: ["domain_name"],
+          where: { domain_type: "specialization" },
+          required: false
+        },
     ],
     transaction: t
   });
@@ -515,7 +520,7 @@ const buttons = await ControlMaster.findAll({
         phone_no: profile.phone_no,
         email: profile.email,
         gender: details?.genderLookup?.domain_name || "",
-        specialization: details?.specializationLookup?.domain_value || "",
+        specialization: specialization?.specializationLookup?.domain_name || "",
         status: profile.status,
         created_on: profile.created_on
   ? profile.created_on.toISOString().split("T")[0]
@@ -629,9 +634,7 @@ if (role === "patient") {
 if (role === "doctor") {
   profileData = {
     dob: details?.dob || null,
-    gender: details?.genderLookup?.domain_value || null,
     experience_years: details?.experience_years || null,
-    fees: details?.fees || null,
 
     current_address: {
       address_line_1: details?.currentAddress?.address_line_1 || null,
