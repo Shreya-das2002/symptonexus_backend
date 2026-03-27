@@ -274,14 +274,17 @@ AdminUserDetails.belongsTo(Address, {
 
 PatientDetails.belongsTo(DomainLookup, {
   foreignKey: "blood_group",
+  targetKey: "domain_value",
   as: "BloodGroup"
 });
 
 
 PatientDetails.belongsTo(DomainLookup, {
-  foreignKey: "gender",
+    foreignKey: "gender",
+  targetKey: "domain_value",
   as: "genderLookup"
 });
+
 
 
 /* =====================================================

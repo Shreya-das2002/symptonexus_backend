@@ -256,6 +256,14 @@ if (profile.status !== "Active") {
           where: { domain_type: "gender" },
           required: false
         },
+
+          {
+          model: DomainLookup,
+          as: "BloodGroup",
+          attributes: ["domain_name"],
+          where: { domain_type: "blood_group" },
+          required: false
+        },
         
     {
       model: Address,
@@ -484,7 +492,9 @@ const buttons = await ControlMaster.findAll({
         phone_no: profile.phone_no,
         gender: details?.genderLookup?.domain_name || "",
         status: profile.status,
-        created_on: profile.created_on,
+        created_on: profile.created_on
+              ? profile.created_on.toISOString().split("T")[0]
+              : null,
         created_by: profile.created_by
       };
 
@@ -584,7 +594,7 @@ if (role === "patient") {
   dob: details?.dob || null,
   marital_status: details?.marital_status || null,
   occupation: details?.occupation || null,
-  blood_group: details?.blood_group || null,
+  blood_group: details?.BloodGroup?.domain_name || null,
   height: details?.height || null,
   weight: details?.weight || null,
   allergies: details?.allergies || [],
