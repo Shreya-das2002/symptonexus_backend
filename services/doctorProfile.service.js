@@ -16,7 +16,7 @@ const buildAddress = (addr) => {
     district: addr.district || null,
     state: addr.state || null,
     country: addr.country || null,
-    pin: addr.pin_code || null,
+    pin: addr.pin || null,
     status: "Active",
   };
 };

@@ -352,7 +352,7 @@ if (role === "doctor") {
 
   });
    /* EXPERIENCE */
-  await DoctorExperience.findAll({
+    doctorExperiences = await DoctorExperience.findAll({
     where: { doctor_id: profile.doctor_id },
     attributes: [
       "organization_name",
@@ -380,7 +380,7 @@ if (role === "doctor") {
   });
 
   /* AVAILABILITY */
-  await DoctorAvailability.findAll({
+  doctorAvailabilities = await DoctorAvailability.findAll({
     where: { doctor_id: profile.doctor_id },
     attributes: ["date", "slot_count", "fees"],
     transaction: t
@@ -399,7 +399,7 @@ if (role.includes("admin")) {
 
       {
         model: Address,
-        as: "currentAddress",
+        as: "CurrentAddress",
         attributes: [
           "address_line_1",
           "address_line_2",
@@ -413,7 +413,7 @@ if (role.includes("admin")) {
 
       {
         model: Address,
-        as: "permanentAddress",
+        as: "PermanentAddress",
         attributes: [
           "address_line_1",
           "address_line_2",
@@ -634,35 +634,35 @@ if (role === "patient") {
 if (role === "doctor") {
   profileData = {
     dob: details?.dob || null,
-    experience_years: details?.experience_years || null,
+    experience_years: details?.experience || null,
 
     current_address: {
-      address_line_1: details?.currentAddress?.address_line_1 || null,
-      address_line_2: details?.currentAddress?.address_line_2 || null,
-      city: details?.currentAddress?.city || null,
-      district: details?.currentAddress?.district || null,
-      state: details?.currentAddress?.state || null,
-      country: details?.currentAddress?.country || null,
-      pin: details?.currentAddress?.pin || null
+      address_line_1: details?.CurrentAddress?.address_line_1 || null,
+      address_line_2: details?.CurrentAddress?.address_line_2 || null,
+      city: details?.CurrentAddress?.city || null,
+      district: details?.CurrentAddress?.district || null,
+      state: details?.CurrentAddress?.state || null,
+      country: details?.CurrentAddress?.country || null,
+      pin: details?.CurrentAddress?.pin || null
     },
     
     permanent_address: {
-      address_line_1: details?.permanentAddress?.address_line_1 || null,
-      address_line_2: details?.permanentAddress?.address_line_2 || null,
-      city: details?.permanentAddress?.city || null,
-      district: details?.permanentAddress?.district || null,
-      state: details?.permanentAddress?.state || null,
-      country: details?.permanentAddress?.country || null,
-      pin: details?.permanentAddress?.pin || null
+      address_line_1: details?.PermanentAddress?.address_line_1 || null,
+      address_line_2: details?.PermanentAddress?.address_line_2 || null,
+      city: details?.PermanentAddress?.city || null,
+      district: details?.PermanentAddress?.district || null,
+      state: details?.PermanentAddress?.state || null,
+      country: details?.PermanentAddress?.country || null,
+      pin: details?.PermanentAddress?.pin || null
     },
     
-    doctor_experiences: {
-      organization_name: details?.doctor_experiences?.organization_name || null,
-      key_experience: details?.doctor_experiences?.key_experience || null,
-      start_date: details?.doctor_experiences?.start_date || null,
-      end_date: details?.doctor_experiences?.end_date || null,
-      experience_desc: details?.doctor_experiences?.experience_desc || null
-     },
+    doctor_experiences: doctorExperiences.map((exp) => ({
+      organization_name: exp.organization_name || null,
+      key_experience: exp.key_experience || null,
+      start_date: exp.start_date || null,
+      end_date: exp.end_date || null,
+      experience_desc: exp.experience_desc || null
+    }))
 
     }
 
