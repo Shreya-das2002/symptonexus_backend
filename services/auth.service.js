@@ -672,23 +672,23 @@ if (role.includes("admin")) {
   profileData = {
 
     current_address: {
-      address_line_1: details?.currentAddress?.address_line_1 || null,
-      address_line_2: details?.currentAddress?.address_line_2 || null,
-      city: details?.currentAddress?.city || null,
-      district: details?.currentAddress?.district || null,
-      state: details?.currentAddress?.state || null,
-      country: details?.currentAddress?.country || null,
-      pin: details?.currentAddress?.pin || null
+      address_line_1: details?.CurrentAddress?.address_line_1 || null,
+      address_line_2: details?.CurrentAddress?.address_line_2 || null,
+      city: details?.CurrentAddress?.city || null,
+      district: details?.CurrentAddress?.district || null,
+      state: details?.CurrentAddress?.state || null,
+      country: details?.CurrentAddress?.country || null,
+      pin: details?.CurrentAddress?.pin || null
     },
     
     permanent_address: {
-      address_line_1: details?.permanentAddress?.address_line_1 || null,
-      address_line_2: details?.permanentAddress?.address_line_2 || null,
-      city: details?.permanentAddress?.city || null,
-      district: details?.permanentAddress?.district || null,
-      state: details?.permanentAddress?.state || null,
-      country: details?.permanentAddress?.country || null,
-      pin: details?.permanentAddress?.pin || null
+      address_line_1: details?.PermanentAddress?.address_line_1 || null,
+      address_line_2: details?.PermanentAddress?.address_line_2 || null,
+      city: details?.PermanentAddress?.city || null,
+      district: details?.PermanentAddress?.district || null,
+      state: details?.PermanentAddress?.state || null,
+      country: details?.PermanentAddress?.country || null,
+      pin: details?.PermanentAddress?.pin || null
     }
     
 

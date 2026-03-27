@@ -184,11 +184,11 @@ class AdminProfileService {
         include: [
           {
             model: Address,
-            as: "currentAddress",
+            as: "CurrentAddress",
           },
           {
             model: Address,
-            as: "permanentAddress",
+            as: "PermanentAddress",
           },
         ],
         transaction: t,

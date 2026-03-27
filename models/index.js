@@ -259,12 +259,12 @@ Address.hasMany(AdminUserDetails, {
 
 AdminUserDetails.belongsTo(Address, {
   foreignKey: "current_address_id",
-  as: "currentAddress"
+  as: "CurrentAddress"
 });
 
 AdminUserDetails.belongsTo(Address, {
   foreignKey: "permanent_address_id",
-  as: "permanentAddress"
+  as: "PermanentAddress"
 });
 
 

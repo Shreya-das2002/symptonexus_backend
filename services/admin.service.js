@@ -304,7 +304,7 @@ if (createdBy) {
             include: [
               {
       model: Address,
-      as: "currentAddress",
+      as: "CurrentAddress",
       attributes: [
         "address_line_1",
         "address_line_2",
@@ -318,7 +318,7 @@ if (createdBy) {
 
     {
       model: Address,
-      as: "permanentAddress",
+      as: "PermanentAddress",
       attributes: [
         "address_line_1",
         "address_line_2",
@@ -364,22 +364,22 @@ if (createdBy) {
         status: admin.status,
 
         current_address: {
-      address_line_1: admin.admin_detail?.currentAddress?.address_line_1 || null,
-      address_line_2: admin.admin_detail?.currentAddress?.address_line_2 || null,
-      city: admin.admin_detail?.currentAddress?.city || null,
-      district: admin.admin_detail?.currentAddress?.district || null,
-      state: admin.admin_detail?.currentAddress?.state || null,
-      country: admin.admin_detail?.currentAddress?.country || null,
-      pin: admin.admin_detail?.currentAddress?.pin || null
+      address_line_1: admin.admin_detail?.CurrentAddress?.address_line_1 || null,
+      address_line_2: admin.admin_detail?.CurrentAddress?.address_line_2 || null,
+      city: admin.admin_detail?.CurrentAddress?.city || null,
+      district: admin.admin_detail?.CurrentAddress?.district || null,
+      state: admin.admin_detail?.CurrentAddress?.state || null,
+      country: admin.admin_detail?.CurrentAddress?.country || null,
+      pin: admin.admin_detail?.CurrentAddress?.pin || null
         },
         permanet_address: {
-      address_line_1: admin.admin_detail?.permanentAddress?.address_line_1 || null,
-      address_line_2: admin.admin_detail?.permanentAddress?.address_line_2 || null,
-      city: admin.admin_detail?.permanentAddress?.city || null,
-      district: admin.admin_detail?.permanentAddress?.district || null,
-      state: admin.admin_detail?.permanentAddress?.state || null,
-      country: admin.admin_detail?.permanentAddress?.country || null,
-      pin: admin.admin_detail?.permanentAddress?.pin || null
+      address_line_1: admin.admin_detail?.PermanentAddress?.address_line_1 || null,
+      address_line_2: admin.admin_detail?.PermanentAddress?.address_line_2 || null,
+      city: admin.admin_detail?.PermanentAddress?.city || null,
+      district: admin.admin_detail?.PermanentAddress?.district || null,
+      state: admin.admin_detail?.PermanentAddress?.state || null,
+      country: admin.admin_detail?.PermanentAddress?.country || null,
+      pin: admin.admin_detail?.PermanentAddress?.pin || null
         }
       };
     });
