@@ -8,6 +8,7 @@ const SlotAvailableRoutes = require("./slotAvailability.routes");
 const AdminProfileRoutes = require("./adminProfile.routes");
 const dashboardRoutes = require("./homepageCount.routes");
 const accountRoutes = require("./accountDelete.routes");
+const appointmentRoutes = require("./appointment.routes");
 
 
 
@@ -22,4 +23,5 @@ module.exports = (app) => {
   app.use("/api/admin", AdminProfileRoutes);
   app.use("/api", dashboardRoutes);
   app.use("/api/account", accountRoutes);
+  app.use("/api/appointment", appointmentRoutes);
 };

@@ -669,6 +669,7 @@ else if (role?.toLowerCase() === "patient") {
         model: DoctorAvailability,
         as: "availabilities",
         attributes: [
+          "doctor_availability_id",
           "date",
           "slot_count",
           "fees",
@@ -766,10 +767,12 @@ const result = filteredDoctors.map(doc => ({
      doctor_availability: Array.isArray(doc.availabilities)
     ? doc.availabilities.reduce((acc, slot) => {
         acc[slot.date] = {
+          doctor_availability_id: slot.doctor_availability_id,
           slot_count: slot.slot_count,
           fees: slot.fees,
           start_time: slot.start_time,
-          end_time: slot.end_time
+          end_time: slot.end_time,
+          
         };
         return acc;
       }, {})

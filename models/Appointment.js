@@ -26,7 +26,7 @@ const Appointment = sequelize.define("appointment", {
 
   booking_time: {
     type: DataTypes.TIME,
-    allowNull: false
+    allowNull: true
   },
 
   description: {
@@ -49,7 +49,16 @@ const Appointment = sequelize.define("appointment", {
 
   created_by: {
     type: DataTypes.STRING
-  }
+  },
+    updated_on: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+
+  updated_by: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
 
 }, {
   tableName: "appointment",
