@@ -756,13 +756,13 @@ const result = filteredDoctors.map(doc => ({
   },
 
     doctor_experiences:
-    doc.doctor_experiences?.map(exp => ({
-      organization_name: exp.organization_name,
-      start_date: exp.start_date,
-      end_date: exp.end_date,
-      designation: exp.key_experience,
-      responsibilities: exp.experience_desc,
-    })) || [],
+      doc.doctor_experiences?.map(exp => ({
+    organization_name: exp.organization_name || "",
+    start_date: exp.start_date || null,
+    end_date: exp.end_date || null,
+    designation: exp.key_experience || "",
+    responsibilities: exp.experience_desc || "",
+  })) || [],
 
      doctor_availability: Array.isArray(doc.availabilities)
     ? doc.availabilities.reduce((acc, slot) => {
