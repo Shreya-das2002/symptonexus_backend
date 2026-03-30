@@ -347,7 +347,7 @@ if (createdBy) {
         last_name: admin.last_name,
         email: admin.email,
         phone_no: admin.phone_no,
-        dob: admin.dob,
+        dob: admin.admin_detail?.dob,
 
         gender: admin?.genderLookup?.domain_name || null,
 
