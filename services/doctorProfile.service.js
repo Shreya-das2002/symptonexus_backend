@@ -118,7 +118,7 @@ class DoctorProfileService {
           doctor_id,
           start_date: exp.start_date,
           end_date: exp.end_date,
-          organization_name: exp.organization,
+          organization_name: exp.organization_name,
           key_experience: exp.designation,
           experience_desc: exp.responsibilities,
         }));
