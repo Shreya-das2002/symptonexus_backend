@@ -77,7 +77,46 @@ class AdminProfileService {
       /* ================= CURRENT ADDRESS ================= */
 
       if (current_address) {
-        const currentAddressData = buildAddress(current_address);
+        let existingAddress = null;
+
+        if (currentAddressId) {
+          existingAddress = await Address.findOne({
+            where: { address_id: currentAddressId },
+            transaction: t,
+          });
+        }
+
+        const currentAddressData = {
+          address_line_1:
+            current_address.address_line_1 ||
+            existingAddress?.address_line_1 ||
+            null,
+          address_line_2:
+            current_address.address_line_2 ||
+            existingAddress?.address_line_2 ||
+            null,
+          city:
+            current_address.city ||
+            existingAddress?.city ||
+            null,
+          district:
+            current_address.district ||
+            existingAddress?.district ||
+            null,
+          state:
+            current_address.state ||
+            existingAddress?.state ||
+            null,
+          country:
+            current_address.country ||
+            existingAddress?.country ||
+            null,
+          pin:
+            current_address.pin ||
+            existingAddress?.pin ||
+            null,
+          status: "Active",
+        };
 
         if (currentAddressId) {
           await Address.update(currentAddressData, {
@@ -95,7 +134,46 @@ class AdminProfileService {
       /* ================= PERMANENT ADDRESS ================= */
 
       if (permanent_address) {
-        const permanentAddressData = buildAddress(permanent_address);
+        let existingAddress = null;
+
+        if (permanentAddressId) {
+          existingAddress = await Address.findOne({
+            where: { address_id: permanentAddressId },
+            transaction: t,
+          });
+        }
+
+        const permanentAddressData = {
+          address_line_1:
+            permanent_address.address_line_1 ||
+            existingAddress?.address_line_1 ||
+            null,
+          address_line_2:
+            permanent_address.address_line_2 ||
+            existingAddress?.address_line_2 ||
+            null,
+          city:
+            permanent_address.city ||
+            existingAddress?.city ||
+            null,
+          district:
+            permanent_address.district ||
+            existingAddress?.district ||
+            null,
+          state:
+            permanent_address.state ||
+            existingAddress?.state ||
+            null,
+          country:
+            permanent_address.country ||
+            existingAddress?.country ||
+            null,
+          pin:
+            permanent_address.pin ||
+            existingAddress?.pin ||
+            null,
+          status: "Active",
+        };
 
         if (permanentAddressId) {
           await Address.update(permanentAddressData, {
@@ -111,7 +189,6 @@ class AdminProfileService {
       }
 
       /* ================= DOB HANDLING ================= */
-
 
       const hasValidDob = !!(dob && dob !== "" && dob !== "Invalid date");
 
@@ -204,7 +281,7 @@ class AdminProfileService {
       };
     } catch (error) {
       await t.rollback();
-      
+      throw error;
     }
   }
 }
