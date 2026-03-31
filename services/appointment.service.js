@@ -1,5 +1,4 @@
 const sequelize = require("../config/database");
-
 const Appointment = require("../models/Appointment");
 const DomainLookup = require("../models/Domain_lookup");
 const DoctorAvailability = require("../models/Doctor_Availablity");
@@ -107,6 +106,8 @@ class AppointmentService {
 
       }
 
+        
+
       /* CREATE APPOINTMENT */
       const appointment = await Appointment.create({
 
@@ -125,6 +126,19 @@ class AppointmentService {
 
       }, { transaction: t });
 
+            /* GENERATE BOOKING NUMBER */
+
+      const date = new Date(appointment.booking_date);
+        const day = String(date.getDate()).padStart(2, "0");
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const year = date.getFullYear();
+
+        const booking_no = `BK-${day}${month}${year}-${String(appointment.appointment_id).padStart(4, "0")}`;
+
+        await appointment.update({
+          booking_no
+        }, { transaction: t });
+
       await t.commit();
 
       return {
@@ -136,6 +150,8 @@ class AppointmentService {
           patient_id: appointment.patient_id,
           doctor_id: appointment.doctor_id,
           doctor_availability_id: appointment.doctor_availability_id,
+          booking_no: appointment.booking_no,
+          booking_date: appointment.booking_no,
           booking_date: appointment.booking_date,
           booking_time: appointment.booking_time,
           description: appointment.description,
