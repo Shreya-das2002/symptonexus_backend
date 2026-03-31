@@ -2,8 +2,10 @@ const express = require("express");
 const router = express.Router();
 
 const AppointmentController = require("../controllers/appointment.controller");
+const authMiddleware = require("../middlewares/auth.middleware");
 
-router.post("/create", AppointmentController.createAppointment);
-router.get("/list", AppointmentController.getAllAppointments);
+router.post("/create", authMiddleware, AppointmentController.createAppointment);
+router.get("/list", authMiddleware, AppointmentController.getAllAppointments);
+router.get("/pending-list", authMiddleware, AppointmentController.getPendingAppointmentsByAdmin);
 
 module.exports = router;

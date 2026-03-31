@@ -3,6 +3,9 @@ const sequelize = require("../config/database");
 const Appointment = require("../models/Appointment");
 const DomainLookup = require("../models/Domain_lookup");
 const DoctorAvailability = require("../models/Doctor_Availablity");
+const Admin = require("../models/Admin_user");
+const Doctor = require("../models/Doctor");
+const DoctorSpecialization = require("../models/Doctor_specalization");
 
 class AppointmentService {
 
@@ -207,6 +210,170 @@ class AppointmentService {
     };
 
   } catch (error) {
+
+    return {
+      success: false,
+      message: error.message,
+      data: []
+    };
+
+  }
+
+}
+
+/* =====================================================
+   GET PENDING APPOINTMENTS (STANDARD ADMIN ONLY)
+===================================================== */
+
+static async getPendingAppointmentsByAdmin(adminId) {
+
+  try {
+
+    /* GET ADMIN */
+    const admin = await Admin.findByPk(adminId);
+
+    if (!admin || !admin.department_id) {
+      return {
+        success: false,
+        message: "Admin not found or department not configured",
+        data: []
+      };
+    }
+
+    /* CONVERT "6,8,10" → [6,8,10] */
+    const specializationFilter = admin.department_id
+      .split(",")
+      .map(id => Number(id.trim()));
+
+    /* GET STATUS 1 */
+    const bookingStatusLookup = await DomainLookup.findOne({
+      where: {
+        domain_type: "booking_status",
+        domain_name: "Booking Initiated"
+      }
+    });
+
+    if (!bookingStatusLookup) {
+      return {
+        success: false,
+        message: "Booking Initiated status not found",
+        data: []
+      };
+    }
+
+    /* FETCH APPOINTMENTS */
+    const appointments = await Appointment.findAll({
+
+      where: {
+        booking_status: Number(bookingStatusLookup.domain_value)
+      },
+
+      attributes: [
+        "appointment_id",
+        "patient_id",
+        "doctor_id",
+        "doctor_availability_id",
+        "booking_date",
+        "booking_time",
+        "description",
+        "document_id",
+        "booking_status",
+        "created_on",
+        "created_by"
+      ],
+
+      include: [
+
+        {
+          model: Doctor,
+          as: "doctor",
+          attributes: [
+            "doctor_id",
+            "first_name",
+            "middle_name",
+            "last_name"
+          ],
+          include: [
+            {
+              model: DoctorSpecialization,
+              as: "doctor_specializations",
+              attributes: ["specialization_id"],
+              required: true
+            }
+          ],
+          required: true
+        },
+
+        {
+          model: DoctorAvailability,
+          as: "availability",
+          required: false
+        }
+
+      ],
+
+      order: [["appointment_id", "DESC"]]
+
+    });
+
+    /* FILTER BY ADMIN SPECIALIZATION */
+    const filteredAppointments = appointments.filter(app =>
+      app.doctor?.doctor_specializations?.some(spec =>
+        specializationFilter.includes(Number(spec.specialization_id))
+      )
+    );
+
+    /* FINAL RESPONSE */
+    const result = filteredAppointments.map(app => ({
+
+      appointment_id: app.appointment_id,
+      patient_id: app.patient_id,
+      doctor_id: app.doctor_id,
+      doctor_availability_id: app.doctor_availability_id,
+
+      doctor_name: [
+        app.doctor?.first_name,
+        app.doctor?.middle_name,
+        app.doctor?.last_name
+      ].filter(Boolean).join(" "),
+
+      specialization:
+        app.doctor?.doctor_specializations?.[0]?.specialization_id || null,
+
+      booking_date: app.booking_date,
+      booking_time: app.booking_time,
+
+      description: app.description,
+      document_id: app.document_id,
+
+      booking_status: app.booking_status,
+      booking_status_name: "Booking Initiated",
+
+      doctor_slot: app.availability
+        ? `${app.availability.start_time} - ${app.availability.end_time}`
+        : null,
+
+      fees: app.availability?.fees || null,
+
+      created_on: app.created_on
+        ? app.created_on.toISOString().split("T")[0]
+        : null,
+
+      created_by: app.created_by
+
+    }));
+
+    return {
+      success: true,
+      message: "Pending appointments fetched successfully",
+      data: result
+    };
+
+  }
+
+  catch (error) {
+
+    console.error("GET ADMIN PENDING APPOINTMENTS ERROR:", error);
 
     return {
       success: false,
