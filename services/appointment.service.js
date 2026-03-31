@@ -5,7 +5,9 @@ const Admin = require("../models/Admin_user");
 const Doctor = require("../models/Doctor");
 const DoctorSpecialization = require("../models/Doctor_specalization");
 const DoctorDetails = require("../models/Doctor_Details");
-const DomainLookup = require("../models/Domain_lookup")
+const DomainLookup = require("../models/Domain_lookup");
+const patientDetails = require("../models/Patient_Details");
+const Patient = require("../models/patient");
 
 class AppointmentService {
 
@@ -292,10 +294,36 @@ static async getPendingAppointmentsByAdmin(adminId) {
       ],
 
       include: [
-          
-      ],
-
-      include: [
+           {
+          model: Patient,
+          as: "patient",
+          attributes: [
+            "patient_id",
+            "first_name",
+            "middle_name",
+            "last_name",
+            "email",
+            "phone_no"
+          ],
+          required: false,
+          include: [
+            {
+              model: patientDetails,
+              as: "patient_detail",
+              required: false,
+              include: [
+                {
+                  model: DomainLookup,
+                  as: "genderLookup",
+                  attributes: ["domain_name"],
+                  where: { domain_type: "gender" },
+                  required: false
+                }
+              ]
+            },
+          ]
+        },
+        
         {
           model: Doctor,
           as: "doctor",
@@ -368,9 +396,18 @@ static async getPendingAppointmentsByAdmin(adminId) {
         app.doctor?.last_name
       ].filter(Boolean).join(" "),
 
+      patient_name: [
+        app.patient?.first_name,
+        app.patient?.middle_name,
+        app.patient?.last_name
+      ].filter(Boolean).join(" "),
+
       doctor_email: app.doctor?.email || null,
+      patient_email: app.patient?.email || null,
       doctor_phone: app.doctor?.phone_no || null,
+      patient_phone: app.patient?.phone_no || null,
       doctor_gender: app.doctor?.doctor_detail?.genderLookup?.domain_name || null,
+      patient_gender: app.patient?.patient_detail?.genderLookup?.domain_name || null,
       specialization:
         app.doctor?.doctor_specializations?.[0]?.specializationLookup?.domain_name || null,
 
