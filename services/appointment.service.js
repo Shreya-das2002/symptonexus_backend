@@ -1,10 +1,11 @@
 const sequelize = require("../config/database");
 const Appointment = require("../models/Appointment");
-const DomainLookup = require("../models/Domain_lookup");
 const DoctorAvailability = require("../models/Doctor_Availablity");
 const Admin = require("../models/Admin_user");
 const Doctor = require("../models/Doctor");
 const DoctorSpecialization = require("../models/Doctor_specalization");
+const DoctorDetails = require("../models/Doctor_Details");
+const DomainLookup = require("../models/Domain_lookup")
 
 class AppointmentService {
 
@@ -240,12 +241,8 @@ class AppointmentService {
 /* =====================================================
    GET PENDING APPOINTMENTS (STANDARD ADMIN ONLY)
 ===================================================== */
-
 static async getPendingAppointmentsByAdmin(adminId) {
-
   try {
-
-    /* GET ADMIN */
     const admin = await Admin.findByPk(adminId);
 
     if (!admin || !admin.department_id) {
@@ -256,12 +253,10 @@ static async getPendingAppointmentsByAdmin(adminId) {
       };
     }
 
-    /* CONVERT "6,8,10" → [6,8,10] */
     const specializationFilter = admin.department_id
       .split(",")
       .map(id => Number(id.trim()));
 
-    /* GET STATUS 1 */
     const bookingStatusLookup = await DomainLookup.findOne({
       where: {
         domain_type: "booking_status",
@@ -277,9 +272,7 @@ static async getPendingAppointmentsByAdmin(adminId) {
       };
     }
 
-    /* FETCH APPOINTMENTS */
     const appointments = await Appointment.findAll({
-
       where: {
         booking_status: Number(bookingStatusLookup.domain_value)
       },
@@ -299,7 +292,10 @@ static async getPendingAppointmentsByAdmin(adminId) {
       ],
 
       include: [
+          
+      ],
 
+      include: [
         {
           model: Doctor,
           as: "doctor",
@@ -307,41 +303,60 @@ static async getPendingAppointmentsByAdmin(adminId) {
             "doctor_id",
             "first_name",
             "middle_name",
-            "last_name"
+            "last_name",
+            "email",
+            "phone_no"
           ],
+          required: true,
           include: [
+            {
+              model: DoctorDetails,
+              as: "doctor_detail",
+              required: false,
+              include: [
+                {
+                  model: DomainLookup,
+                  as: "genderLookup",
+                  attributes: ["domain_name"],
+                  where: { domain_type: "gender" },
+                  required: false
+                }
+              ]
+            },
             {
               model: DoctorSpecialization,
               as: "doctor_specializations",
               attributes: ["specialization_id"],
-              required: true
+              required: true,
+              include: [
+                {
+                  model: DomainLookup,
+                  as: "specializationLookup",
+                  attributes: ["domain_name"],
+                  where: { domain_type: "specialization" },
+                  required: false
+                }
+              ]
             }
-          ],
-          required: true
+          ]
         },
-
         {
           model: DoctorAvailability,
           as: "availability",
           required: false
         }
-
       ],
 
       order: [["appointment_id", "DESC"]]
-
     });
 
-    /* FILTER BY ADMIN SPECIALIZATION */
     const filteredAppointments = appointments.filter(app =>
       app.doctor?.doctor_specializations?.some(spec =>
         specializationFilter.includes(Number(spec.specialization_id))
       )
     );
 
-    /* FINAL RESPONSE */
     const result = filteredAppointments.map(app => ({
-
       appointment_id: app.appointment_id,
       patient_id: app.patient_id,
       doctor_id: app.doctor_id,
@@ -353,15 +368,16 @@ static async getPendingAppointmentsByAdmin(adminId) {
         app.doctor?.last_name
       ].filter(Boolean).join(" "),
 
+      doctor_email: app.doctor?.email || null,
+      doctor_phone: app.doctor?.phone_no || null,
+      doctor_gender: app.doctor?.doctor_detail?.genderLookup?.domain_name || null,
       specialization:
-        app.doctor?.doctor_specializations?.[0]?.specialization_id || null,
+        app.doctor?.doctor_specializations?.[0]?.specializationLookup?.domain_name || null,
 
       booking_date: app.booking_date,
       booking_time: app.booking_time,
-
       description: app.description,
       document_id: app.document_id,
-
       booking_status: app.booking_status,
       booking_status_name: "Booking Initiated",
 
@@ -376,7 +392,6 @@ static async getPendingAppointmentsByAdmin(adminId) {
         : null,
 
       created_by: app.created_by
-
     }));
 
     return {
@@ -384,11 +399,7 @@ static async getPendingAppointmentsByAdmin(adminId) {
       message: "Pending appointments fetched successfully",
       data: result
     };
-
-  }
-
-  catch (error) {
-
+  } catch (error) {
     console.error("GET ADMIN PENDING APPOINTMENTS ERROR:", error);
 
     return {
@@ -396,10 +407,9 @@ static async getPendingAppointmentsByAdmin(adminId) {
       message: error.message,
       data: []
     };
-
   }
-
 }
+
 
 }
 
