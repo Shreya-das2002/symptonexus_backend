@@ -163,6 +163,61 @@ class AppointmentService {
 
   }
 
+  // All aapointments destails
+
+  static async getAllAppointments() {
+
+  try {
+
+    const appointments = await Appointment.findAll({
+      include: [
+        {
+          model: DoctorAvailability,
+          as: "availability",
+          required: false
+        }
+      ],
+    });
+
+    const formatted = appointments.map((item) => ({
+      appointment_id: item.appointment_id,
+      patient_id: item.patient_id,
+      doctor_id: item.doctor_id,
+      booking_date: item.booking_date,
+      appointment_time: item.booking_time,
+      booking_status: item.booking_status,
+      booking_time: item.created_on.toISOString().split("T")[1].split(".")[0],
+      
+
+      doc_slot: item.availability
+        ? `${item.availability.start_time} - ${item.availability.end_time}`
+        : null,
+
+      fees: item.availability?.fees || null,
+
+      created_on: item.created_on.toISOString().split("T")[0],
+      created_by: item.created_by
+
+    }));
+
+    return {
+      success: true,
+      message: "Appointments fetched successfully",
+      data: formatted
+    };
+
+  } catch (error) {
+
+    return {
+      success: false,
+      message: error.message,
+      data: []
+    };
+
+  }
+
+}
+
 }
 
 module.exports = AppointmentService;
