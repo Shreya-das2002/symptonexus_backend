@@ -59,9 +59,9 @@ Appointment.belongsTo(Doctor, {
 /* STATUS LOOKUP */
 Appointment.belongsTo(DomainLookup, {
   foreignKey: "booking_status",
+  targetKey: "domain_value",
   as: "statusLookup"
 });
-
 
 /* DOCTOR → AVAILABILITY */
 

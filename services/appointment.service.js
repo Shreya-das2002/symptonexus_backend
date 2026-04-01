@@ -205,6 +205,7 @@ class AppointmentService {
             "phone_no"
           ],
           required: true,
+
           include: [
             {
               model: DoctorDetails,
@@ -237,6 +238,13 @@ class AppointmentService {
             }
           ]
         },
+         {
+          model: DomainLookup,
+          as: "statusLookup",
+          attributes: ["domain_name"],
+          where: { domain_type: "booking_status" },
+          required: false
+        },
         {
           model: DoctorAvailability,
           as: "availability",
@@ -247,6 +255,7 @@ class AppointmentService {
 
     const formatted = appointments.map((item) => ({
       appointment_id: item.appointment_id,
+      appointment_no: item.appointment_no,
       patient_id: item.patient_id,
       doctor_id: item.doctor_id,
       doctor_name: [
@@ -254,9 +263,10 @@ class AppointmentService {
         item.doctor?.middle_name,
         item.doctor?.last_name
       ].filter(Boolean).join(" "),
+      specialization: item.doctor?.doctor_specializations?.[0]?.specializationLookup?.domain_name || null,
       booking_date: item.booking_date,
       appointment_time: item.booking_time,
-      booking_status: item.booking_status,
+      booking_status: item.statusLookup?.domain_name || null,
       booking_time: item.created_on.toISOString().split("T")[1].split(".")[0],
       
 
