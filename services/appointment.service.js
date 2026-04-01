@@ -206,6 +206,7 @@ class AppointmentService {
           ],
           required: true,
 
+
           include: [
             {
               model: DoctorDetails,
@@ -265,7 +266,8 @@ class AppointmentService {
       ].filter(Boolean).join(" "),
       doctor_avatar: [item.doctor?.first_name[0], item.doctor?.last_name[0]].filter(Boolean).join(""),
       specialization: item.doctor?.doctor_specializations?.[0]?.specializationLookup?.domain_name || null,
-      booking_date: item.booking_date,
+      experience: item.doctor?.doctor_detail?.experience,
+      appointment_date: item.booking_date,
       appointment_time: item.booking_time,
       booking_status: item.statusLookup?.domain_name || null,
       booking_time: item.created_on.toISOString().split("T")[1].split(".")[0],
@@ -476,7 +478,6 @@ static async getPendingAppointmentsByAdmin(adminId) {
       description: app.description,
       document_id: app.document_id,
       booking_status: app.booking_status,
-      booking_status_name: "Booking Initiated",
 
       doctor_slot: app.availability
         ? `${app.availability.start_time} - ${app.availability.end_time}`
