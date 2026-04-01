@@ -194,6 +194,50 @@ class AppointmentService {
     const appointments = await Appointment.findAll({
       include: [
         {
+          model: Doctor,
+          as: "doctor",
+          attributes: [
+            "doctor_id",
+            "first_name",
+            "middle_name",
+            "last_name",
+            "email",
+            "phone_no"
+          ],
+          required: true,
+          include: [
+            {
+              model: DoctorDetails,
+              as: "doctor_detail",
+              required: false,
+              include: [
+                {
+                  model: DomainLookup,
+                  as: "genderLookup",
+                  attributes: ["domain_name"],
+                  where: { domain_type: "gender" },
+                  required: false
+                }
+              ]
+            },
+            {
+              model: DoctorSpecialization,
+              as: "doctor_specializations",
+              attributes: ["specialization_id"],
+              required: true,
+              include: [
+                {
+                  model: DomainLookup,
+                  as: "specializationLookup",
+                  attributes: ["domain_name"],
+                  where: { domain_type: "specialization" },
+                  required: false
+                }
+              ]
+            }
+          ]
+        },
+        {
           model: DoctorAvailability,
           as: "availability",
           required: false
@@ -205,6 +249,11 @@ class AppointmentService {
       appointment_id: item.appointment_id,
       patient_id: item.patient_id,
       doctor_id: item.doctor_id,
+      doctor_name: [
+        item.doctor?.first_name,
+        item.doctor?.middle_name,
+        item.doctor?.last_name
+      ].filter(Boolean).join(" "),
       booking_date: item.booking_date,
       appointment_time: item.booking_time,
       booking_status: item.booking_status,
