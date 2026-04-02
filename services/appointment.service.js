@@ -373,6 +373,7 @@ class AppointmentService {
       experience: item.doctor?.doctor_detail?.experience,
       appointment_date: item.booking_date,
       appointment_time: item.booking_time,
+      booking_no: item.booking_no, 
       booking_status: item.statusLookup?.domain_name || null,
       booking_time: item.created_on.toISOString().split("T")[1].split(".")[0],
       
