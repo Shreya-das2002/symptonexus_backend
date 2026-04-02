@@ -109,59 +109,104 @@ class AppointmentController {
      GET PENDING APPOINTMENTS FOR STANDARD ADMIN
   ===================================================== */
   static getPendingAppointmentsByAdmin = asyncHandler(async (req, res) => {
-    try {
+  try {
+    const rawRoleId = req.user?.role_id ?? req.user?.user_type ?? null;
+    const rawRoleName = req.user?.role_name ?? req.user?.role ?? null;
 
-      const adminId =
-        req.user?.admin_id ||
-        req.user?.ref_id ||
-        req.query?.admin_id ||
+    let roleId = null;
+
+    /* resolve numeric role id first */
+    if (rawRoleId !== null && rawRoleId !== undefined && !isNaN(Number(rawRoleId))) {
+      roleId = Number(rawRoleId);
+    }
+
+    /* if role id not found, resolve from role name */
+    if (!roleId && typeof rawRoleName === "string") {
+      const roleName = rawRoleName.trim().toLowerCase();
+
+      if (roleName === "standard admin") {
+        roleId = 2;
+      } else if (roleName === "doctor") {
+        roleId = 4;
+      }
+    }
+
+    let adminId = null;
+    let doctorId = null;
+
+    if (roleId === 2) {
+      adminId =
+        req.user?.admin_id ??
+        req.user?.ref_id ??
+        req.user?.user_id ??
+        req.query?.admin_id ??
         null;
-
-      const result =
-        await AppointmentService.getPendingAppointmentsByAdmin(adminId);
-
-      if (!result || typeof result.success !== "boolean") {
-        return res.sendResponse(
-          res.STATUS.INTERNAL_SERVER_ERROR,
-          "Invalid server response",
-          {},
-          "INVALID_RESPONSE"
-        );
-      }
-
-      if (!result.success) {
-        return res.sendResponse(
-          res.STATUS.BUSINESS_ERROR,
-          result.message || "Failed to fetch pending appointments",
-          {},
-          result.errorCode || "BUSINESS_ERROR",
-          false
-        );
-      }
-
+    } else if (roleId === 4) {
+      doctorId =
+        req.user?.doctor_id ??
+        req.user?.ref_id ??
+        req.user?.user_id ??
+        req.query?.doctor_id ??
+        null;
+    } else {
       return res.sendResponse(
-        res.STATUS.SUCCESS,
-        result.message || "Pending appointments fetched successfully",
-        result.data || [],
-        null,
-        true
+        res.STATUS.BUSINESS_ERROR,
+        "This role is not allowed for appointment list",
+        {
+          received_role_id: rawRoleId ?? null,
+          received_role_name: rawRoleName ?? null
+        },
+        "BUSINESS_ERROR",
+        false
       );
+    }
 
-    } catch (error) {
+    const result = await AppointmentService.getPendingAppointmentsByAdmin(
+      adminId,
+      roleId,
+      doctorId
+    );
 
-      console.error("GET PENDING APPOINTMENTS CONTROLLER ERROR:", error);
-
+    if (!result || typeof result.success !== "boolean") {
       return res.sendResponse(
         res.STATUS.INTERNAL_SERVER_ERROR,
-        "Something went wrong. Please try again later.",
+        "Invalid server response",
         {},
-        "SERVER_ERROR"
+        "INVALID_RESPONSE"
       );
-
     }
-  });
 
-  //Appoinment Bokking Status update  
+    if (!result.success) {
+      return res.sendResponse(
+        res.STATUS.BUSINESS_ERROR,
+        result.message || "Failed to fetch appointments",
+        result.data || [],
+        result.errorCode || "BUSINESS_ERROR",
+        false
+      );
+    }
+
+    return res.sendResponse(
+      res.STATUS.SUCCESS,
+      result.message || "Appointments fetched successfully",
+      result.data || [],
+      null,
+      true
+    );
+
+  } catch (error) {
+    console.error("GET PENDING APPOINTMENTS CONTROLLER ERROR:", error);
+
+    return res.sendResponse(
+      res.STATUS.INTERNAL_SERVER_ERROR,
+      "Something went wrong. Please try again later.",
+      {},
+      "SERVER_ERROR"
+    );
+  }
+});
+
+  //Appoinment Bokking Status   
 
 static updateAppointmentStatus = asyncHandler(async (req, res) => {
   try {

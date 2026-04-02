@@ -8,6 +8,7 @@ const DoctorDetails = require("../models/Doctor_Details");
 const DomainLookup = require("../models/Domain_lookup");
 const patientDetails = require("../models/Patient_Details");
 const Patient = require("../models/patient");
+const Role = require("../models/Role");
 
 class AppointmentService {
 
@@ -185,7 +186,7 @@ class AppointmentService {
 
   }
 
-  // All aapointments destails
+  // All aapointments destails for patient(my appointments)
 
   static async getAllAppointments() {
 
@@ -304,45 +305,65 @@ class AppointmentService {
   }
 
 }
-
 /* =====================================================
-   GET PENDING APPOINTMENTS (STANDARD ADMIN ONLY)
+   GET APPOINTMENTS (ROLE ID BASED STATUS FILTER)
 ===================================================== */
-static async getPendingAppointmentsByAdmin(adminId) {
+static async getPendingAppointmentsByAdmin(adminId, roleId, doctorId = null) {
   try {
-    const admin = await Admin.findByPk(adminId);
+    let bookingStatusValue = null;
+    let specializationFilter = [];
 
-    if (!admin || !admin.department_id) {
+    /* ================= ROLE BASED STATUS ================= */
+    if (Number(roleId) === 2) {
+      // standard admin -> Booking Initiated
+      bookingStatusValue = 1;
+
+      const admin = await Admin.findByPk(adminId);
+
+      if (!admin || !admin.department_id) {
+        return {
+          success: true,
+          message: "No department configured for this admin",
+          data: []
+        };
+      }
+
+      specializationFilter = admin.department_id
+        .split(",")
+        .map(id => Number(id.trim()))
+        .filter(id => !isNaN(id));
+    }
+    else if (Number(roleId) === 4) {
+      // doctor -> Booking Confirmed
+      bookingStatusValue = 2;
+
+      if (!doctorId) {
+        return {
+          success: false,
+          message: "doctorId is required for doctor appointment request list",
+          data: []
+        };
+      }
+    }
+    else {
       return {
         success: false,
-        message: "Admin not found or department not configured",
+        message: "This role is not allowed for appointment request list",
         data: []
       };
     }
 
-    const specializationFilter = admin.department_id
-      .split(",")
-      .map(id => Number(id.trim()));
+    const whereCondition = {
+      booking_status: bookingStatusValue
+    };
 
-    const bookingStatusLookup = await DomainLookup.findOne({
-      where: {
-        domain_type: "booking_status",
-        domain_name: "Booking Initiated"
-      }
-    });
-
-    if (!bookingStatusLookup) {
-      return {
-        success: false,
-        message: "Booking Initiated status not found",
-        data: []
-      };
+    /* doctor should see only own appointments */
+    if (Number(roleId) === 4) {
+      whereCondition.doctor_id = doctorId;
     }
 
     const appointments = await Appointment.findAll({
-      where: {
-        booking_status: Number(bookingStatusLookup.domain_value)
-      },
+      where: whereCondition,
 
       attributes: [
         "appointment_id",
@@ -354,12 +375,15 @@ static async getPendingAppointmentsByAdmin(adminId) {
         "description",
         "document_id",
         "booking_status",
+        "appointment_no",
         "created_on",
-        "created_by"
+        "created_by",
+        "updated_on",
+        "updated_by"
       ],
 
       include: [
-           {
+        {
           model: Patient,
           as: "patient",
           attributes: [
@@ -385,10 +409,9 @@ static async getPendingAppointmentsByAdmin(adminId) {
                   required: false
                 }
               ]
-            },
+            }
           ]
         },
-        
         {
           model: Doctor,
           as: "doctor",
@@ -437,20 +460,33 @@ static async getPendingAppointmentsByAdmin(adminId) {
           model: DoctorAvailability,
           as: "availability",
           required: false
+        },
+        {
+          model: DomainLookup,
+          as: "statusLookup",
+          attributes: ["domain_name"],
+          where: { domain_type: "booking_status" },
+          required: false
         }
       ],
 
       order: [["appointment_id", "DESC"]]
     });
 
-    const filteredAppointments = appointments.filter(app =>
-      app.doctor?.doctor_specializations?.some(spec =>
-        specializationFilter.includes(Number(spec.specialization_id))
-      )
-    );
+    let filteredAppointments = appointments;
+
+    /* standard admin can see only their department specialization */
+    if (Number(roleId) === 2 && specializationFilter.length > 0) {
+      filteredAppointments = appointments.filter(app =>
+        app.doctor?.doctor_specializations?.some(spec =>
+          specializationFilter.includes(Number(spec.specialization_id))
+        )
+      );
+    }
 
     const result = filteredAppointments.map(app => ({
       appointment_id: app.appointment_id,
+      appointment_no: app.appointment_no || null,
       patient_id: app.patient_id,
       doctor_id: app.doctor_id,
       doctor_availability_id: app.doctor_availability_id,
@@ -471,16 +507,25 @@ static async getPendingAppointmentsByAdmin(adminId) {
       patient_email: app.patient?.email || null,
       doctor_phone: app.doctor?.phone_no || null,
       patient_phone: app.patient?.phone_no || null,
-      doctor_gender: app.doctor?.doctor_detail?.genderLookup?.domain_name || null,
-      patient_gender: app.patient?.patient_detail?.genderLookup?.domain_name || null,
+
+      doctor_gender:
+        app.doctor?.doctor_detail?.genderLookup?.domain_name || null,
+
+      patient_gender:
+        app.patient?.patient_detail?.genderLookup?.domain_name || null,
+
+        patient_dob: app.patient?.patient_detail?.dob || null,
+
       specialization:
         app.doctor?.doctor_specializations?.[0]?.specializationLookup?.domain_name || null,
 
-      booking_date: app.booking_date,
-      booking_time: app.booking_time,
-      description: app.description,
-      document_id: app.document_id,
+      booking_date: app.booking_date || null,
+      booking_time: app.booking_time || null,
+      description: app.description || null,
+      document_id: app.document_id || null,
+
       booking_status: app.booking_status,
+      booking_status_name: app.statusLookup?.domain_name || null,
 
       doctor_slot: app.availability
         ? `${app.availability.start_time} - ${app.availability.end_time}`
@@ -492,16 +537,22 @@ static async getPendingAppointmentsByAdmin(adminId) {
         ? app.created_on.toISOString().split("T")[0]
         : null,
 
-      created_by: app.created_by
+      updated_on: app.updated_on
+        ? app.updated_on.toISOString().split("T")[0]
+        : null,
+
+      created_by: app.created_by,
+      updated_by: app.updated_by
     }));
 
     return {
       success: true,
-      message: "Pending appointments fetched successfully",
+      message: "Appointments fetched successfully",
       data: result
     };
+
   } catch (error) {
-    console.error("GET ADMIN PENDING APPOINTMENTS ERROR:", error);
+    console.error("GET APPOINTMENTS ERROR:", error);
 
     return {
       success: false,
@@ -510,7 +561,6 @@ static async getPendingAppointmentsByAdmin(adminId) {
     };
   }
 }
-
 /* =====================================================
    APPOINTMENT APPROVAL / REJECTION (LIKE DOCTOR STATUS)
 ===================================================== */
