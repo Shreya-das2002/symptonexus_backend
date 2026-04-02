@@ -12,7 +12,7 @@ const Patient = require("../models/patient");
 class AppointmentService {
 
   /* CREATE APPOINTMENT BY PATIENT */
-  static async createAppointment(payload, createdBy = null) {
+  static async createAppointment(payload, createdBy) {
 
     const t = await sequelize.transaction();
 
@@ -272,7 +272,6 @@ class AppointmentService {
       booking_status: item.statusLookup?.domain_name || null,
       booking_time: item.created_on.toISOString().split("T")[1].split(".")[0],
       
-
       doc_slot: item.availability
         ? `${item.availability.start_time} - ${item.availability.end_time}`
         : null,
@@ -508,6 +507,143 @@ static async getPendingAppointmentsByAdmin(adminId) {
   }
 }
 
+/* =====================================================
+   APPOINTMENT APPROVAL / REJECTION (LIKE DOCTOR STATUS)
+===================================================== */
+
+static async updateAppointmentStatus(appointmentId, action, updatedBy) {
+
+  const t = await sequelize.transaction();
+
+  try {
+
+    /* VALIDATION */
+    if (!appointmentId || !action) {
+      await t.rollback();
+      return {
+        success: false,
+        message: "appointmentId and action are required"
+      };
+    }
+
+    const appointment = await Appointment.findByPk(appointmentId, { transaction: t });
+
+    if (!appointment) {
+      await t.rollback();
+      return {
+        success: false,
+        message: "Appointment not found"
+      };
+    }
+
+    /* GET DOMAIN STATUS */
+    const confirmedStatus = await DomainLookup.findOne({
+      where: {
+        domain_type: "booking_status",
+        domain_name: "Booking Confirmed"
+      },
+      transaction: t
+    });
+
+    const rejectedStatus = await DomainLookup.findOne({
+      where: {
+        domain_type: "booking_status",
+        domain_name: "Booking Rejected"
+      },
+      transaction: t
+    });
+
+    if (!confirmedStatus || !rejectedStatus) {
+      await t.rollback();
+      return {
+        success: false,
+        message: "Booking status not configured properly"
+      };
+    }
+
+    let bookingStatus = null;
+    let appointmentNo = appointment.appointment_no;
+
+    /* ================= APPROVE ================= */
+    if (action.toLowerCase() === "approve") {
+
+      bookingStatus = Number(confirmedStatus.domain_value);
+
+      /* GENERATE BOOKING NUMBER ONLY IF NOT EXISTS */
+      if (!appointmentNo) {
+
+        const date = new Date(appointment.booking_date);
+        const day = String(date.getDate()).padStart(2, "0");
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const year = date.getFullYear();
+
+        appointmentNo = `APT-${day}${month}${year}-${String(
+          appointment.appointment_id
+        ).padStart(4, "0")}`;
+      }
+
+    }
+
+    /* ================= REJECT ================= */
+    else if (action.toLowerCase() === "reject") {
+
+      bookingStatus = Number(rejectedStatus.domain_value);
+
+    }
+
+    else {
+      await t.rollback();
+      return {
+        success: false,
+        message: "Invalid action (approve/reject)"
+      };
+    }
+
+    /* UPDATE APPOINTMENT */
+    await appointment.update({
+
+      booking_status: bookingStatus,
+      appointment_no: appointmentNo,
+      updated_by: updatedBy,  
+      updated_on: new Date()
+
+    }, { transaction: t });
+
+
+    await t.commit();
+
+    return {
+      success: true,
+      message:
+        action.toLowerCase() === "approve"
+          ? "Appointment approved successfully"
+          : "Appointment rejected successfully",
+
+      data: {
+        appointment_id: appointment.appointment_id,
+        appointment_no: appointmentNo || null,
+        booking_status: appointment.booking_status,
+        updated_by: appointment.updated_by,
+        updated_on: appointment.updated_on
+      }
+    };
+
+  }
+
+  catch (error) {
+
+    await t.rollback();
+
+    console.error("UPDATE APPOINTMENT STATUS ERROR:", error);
+
+    return {
+      success: false,
+      message: error.message
+    };
+
+  }
+
+}
 
 }
 

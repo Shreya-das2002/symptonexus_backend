@@ -7,5 +7,6 @@ const authMiddleware = require("../middlewares/auth.middleware");
 router.post("/create", authMiddleware, AppointmentController.createAppointment);
 router.get("/list", authMiddleware, AppointmentController.getAllAppointments);
 router.get("/pending-list", authMiddleware, AppointmentController.getPendingAppointmentsByAdmin);
+router.put("/update-status", authMiddleware, AppointmentController.updateAppointmentStatus);
 
 module.exports = router;

@@ -161,6 +161,76 @@ class AppointmentController {
     }
   });
 
+  //Appoinment Bokking Status update  
+
+static updateAppointmentStatus = asyncHandler(async (req, res) => {
+  try {
+
+    const { appointment_id, action } = req.body;
+
+    if (!appointment_id || !action) {
+      return res.sendResponse(
+        res.STATUS.BUSINESS_ERROR,
+        "appointment_id and action are required",
+        {},
+        "BUSINESS_ERROR",
+        false
+      );
+    }
+
+    const updatedBy =
+      req.user?.admin_id ||
+      req.user?.user_id ||
+      req.body.updated_by ||
+      null;
+
+    const result = await AppointmentService.updateAppointmentStatus(
+      Number(appointment_id),
+      action,
+      updatedBy
+    );
+
+    if (!result || typeof result.success !== "boolean") {
+      return res.sendResponse(
+        res.STATUS.INTERNAL_SERVER_ERROR,
+        "Invalid server response",
+        {},
+        "INVALID_RESPONSE"
+      );
+    }
+
+    if (!result.success) {
+      return res.sendResponse(
+        res.STATUS.BUSINESS_ERROR,
+        result.message || "Failed to update appointment status",
+        {},
+        result.errorCode || "BUSINESS_ERROR",
+        false
+      );
+    }
+
+    return res.sendResponse(
+      res.STATUS.SUCCESS,
+      result.message || "Appointment status updated successfully",
+      result.data || {},
+      null,
+      true
+    );
+
+  } catch (error) {
+
+    console.error("UPDATE APPOINTMENT STATUS CONTROLLER ERROR:", error);
+
+    return res.sendResponse(
+      res.STATUS.INTERNAL_SERVER_ERROR,
+      "Something went wrong. Please try again later.",
+      {},
+      "SERVER_ERROR"
+    );
+
+  }
+});
+
 }
 
 module.exports = AppointmentController;
