@@ -302,11 +302,39 @@ class AppointmentService {
       order: [["appointment_id", "DESC"]]
     });
 
-    const formatted = appointments.map((item) => ({
+    const admins = await Admin.findAll({
+        attributes: [
+          "admin_user_id",
+          "first_name",
+          "middle_name",
+          "last_name",
+          "email",
+          "phone_no",
+          "department_id"
+        ]
+      });
+
+      const formatted = appointments.map((item) => {
+        const specializationId = Number(
+          item.doctor?.doctor_specializations?.[0]?.specialization_id
+        );
+
+        const matchedAdmins = admins.filter((admin) => {
+          const deptIds = (admin.department_id || "")
+            .split(",")
+            .map(id => Number(id.trim()))
+            .filter(id => !isNaN(id));
+
+          return deptIds.includes(specializationId);
+        });
+
+        const primaryAdmin = matchedAdmins[0] || null;
+   return {
       appointment_id: item.appointment_id,
       appointment_no: item.appointment_no,
       patient_id: item.patient_id,
       doctor_id: item.doctor_id,
+      admin_id: primaryAdmin.admin_user_id,
       doctor_name: [
         item.doctor?.first_name,
         item.doctor?.middle_name,
@@ -317,10 +345,23 @@ class AppointmentService {
         item.patient?.middle_name,
         item.patient?.last_name
       ].filter(Boolean).join(" "),
+
+      admin_name: primaryAdmin
+            ? [
+                primaryAdmin.first_name,
+                primaryAdmin.middle_name,
+                primaryAdmin.last_name
+              ].filter(Boolean).join(" ")
+            : null,
+
       doctor_avatar: [item.doctor?.first_name[0], item.doctor?.last_name[0]].filter(Boolean).join(""),
       patient_avatar: [item.patient?.first_name[0], item.patient?.last_name[0]].filter(Boolean).join(""),
         doctor_phone: item.doctor?.phone_no || null,
       patient_phone: item.patient?.phone_no || null,
+      admin_phone: primaryAdmin.phone_no || null,
+      doctor_email: item.doctor?.email || null,
+      patient_email: item.patient?.email || null,
+      admin_email: primaryAdmin.email || null,
       doctor_gender:
         item.doctor?.doctor_detail?.genderLookup?.domain_name || null,
       patient_gender:
@@ -343,8 +384,8 @@ class AppointmentService {
 
       created_on: item.created_on.toISOString().split("T")[0],
       created_by: item.created_by
-
-    }));
+       };
+      });
 
     return {
       success: true,
