@@ -192,8 +192,55 @@ class AppointmentService {
 
   try {
 
-    const appointments = await Appointment.findAll({
+   const appointments = await Appointment.findAll({
+
+      attributes: [
+        "appointment_id",
+        "patient_id",
+        "doctor_id",
+        "doctor_availability_id",
+        "booking_date",
+        "booking_time",
+        "description",
+        "document_id",
+        "booking_status",
+        "appointment_no",
+        "created_on",
+        "created_by",
+        "updated_on",
+        "updated_by"
+      ],
+
       include: [
+        {
+          model: Patient,
+          as: "patient",
+          attributes: [
+            "patient_id",
+            "first_name",
+            "middle_name",
+            "last_name",
+            "email",
+            "phone_no"
+          ],
+          required: false,
+          include: [
+            {
+              model: patientDetails,
+              as: "patient_detail",
+              required: false,
+              include: [
+                {
+                  model: DomainLookup,
+                  as: "genderLookup",
+                  attributes: ["domain_name"],
+                  where: { domain_type: "gender" },
+                  required: false
+                }
+              ]
+            }
+          ]
+        },
         {
           model: Doctor,
           as: "doctor",
@@ -206,8 +253,6 @@ class AppointmentService {
             "phone_no"
           ],
           required: true,
-
-
           include: [
             {
               model: DoctorDetails,
@@ -240,19 +285,21 @@ class AppointmentService {
             }
           ]
         },
-         {
+        {
+          model: DoctorAvailability,
+          as: "availability",
+          required: false
+        },
+        {
           model: DomainLookup,
           as: "statusLookup",
           attributes: ["domain_name"],
           where: { domain_type: "booking_status" },
           required: false
-        },
-        {
-          model: DoctorAvailability,
-          as: "availability",
-          required: false
         }
       ],
+
+      order: [["appointment_id", "DESC"]]
     });
 
     const formatted = appointments.map((item) => ({
@@ -265,9 +312,20 @@ class AppointmentService {
         item.doctor?.middle_name,
         item.doctor?.last_name
       ].filter(Boolean).join(" "),
+      patient_name: [
+        item.patient?.first_name,
+        item.patient?.middle_name,
+        item.patient?.last_name
+      ].filter(Boolean).join(" "),
       doctor_avatar: [item.doctor?.first_name[0], item.doctor?.last_name[0]].filter(Boolean).join(""),
-      doctor_email: item.doctor?.email,
-      doctor_phno: item.doctor?.phone_no,
+      patient_avatar: [item.patient?.first_name[0], item.patient?.last_name[0]].filter(Boolean).join(""),
+        doctor_phone: item.doctor?.phone_no || null,
+      patient_phone: item.patient?.phone_no || null,
+      doctor_gender:
+        item.doctor?.doctor_detail?.genderLookup?.domain_name || null,
+      patient_gender:
+        item.patient?.patient_detail?.genderLookup?.domain_name || null,
+        patient_dob: item.patient?.patient_detail?.dob || null,
       specialization: item.doctor?.doctor_specializations?.[0]?.specializationLookup?.domain_name || null,
       doctor_bio: item.doctor?.doctor_detail?.sort_desc,
       license_number: item.doctor?.doctor_detail?.licence_number,
