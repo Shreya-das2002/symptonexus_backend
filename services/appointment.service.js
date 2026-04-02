@@ -265,7 +265,11 @@ class AppointmentService {
         item.doctor?.last_name
       ].filter(Boolean).join(" "),
       doctor_avatar: [item.doctor?.first_name[0], item.doctor?.last_name[0]].filter(Boolean).join(""),
+      doctor_email: item.doctor?.email,
+      doctor_phno: item.doctor?.phone_no,
       specialization: item.doctor?.doctor_specializations?.[0]?.specializationLookup?.domain_name || null,
+      doctor_bio: item.doctor?.doctor_detail?.sort_desc,
+      license_number: item.doctor?.doctor_detail?.licence_number,
       experience: item.doctor?.doctor_detail?.experience,
       appointment_date: item.booking_date,
       appointment_time: item.booking_time,
