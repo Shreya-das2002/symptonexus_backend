@@ -205,6 +205,7 @@ class AppointmentService {
         "document_id",
         "booking_status",
         "appointment_no",
+        "booking_no",
         "created_on",
         "created_by",
         "updated_on",
