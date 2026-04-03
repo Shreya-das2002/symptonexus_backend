@@ -57,53 +57,128 @@ class AppointmentController {
   });
 
   /* =====================================================
-     GET ALL APPOINTMENTS
-  ===================================================== */
-  static getAllAppointments = asyncHandler(async (req, res) => {
-    try {
+   GET ALL APPOINTMENTS
+===================================================== */
+static getAllAppointments = asyncHandler(async (req, res) => {
+  try {
+    const rawRoleId = req.user?.role_id ?? req.user?.user_type ?? null;
+    const rawRoleName = req.user?.role_name ?? req.user?.role ?? null;
 
-      const result = await AppointmentService.getAllAppointments();
+    let roleId = null;
 
-      if (!result || typeof result.success !== "boolean") {
-        return res.sendResponse(
-          res.STATUS.INTERNAL_SERVER_ERROR,
-          "Invalid server response",
-          {},
-          "INVALID_RESPONSE"
-        );
+    /* resolve numeric role id first */
+    if (rawRoleId !== null && rawRoleId !== undefined && !isNaN(Number(rawRoleId))) {
+      roleId = Number(rawRoleId);
+    }
+
+    /* if role id not found, resolve from role name */
+    if (!roleId && typeof rawRoleName === "string") {
+      const roleName = rawRoleName.trim().toLowerCase();
+
+      if (roleName === "super admin") {
+        roleId = 1;
+      } else if (roleName === "standard admin") {
+        roleId = 2;
+      } else if (roleName === "doctor") {
+        roleId = 4;
+      } else if (roleName === "patient") {
+        roleId = 5;
       }
+    }
 
-      if (!result.success) {
-        return res.sendResponse(
-          res.STATUS.BUSINESS_ERROR,
-          result.message || "Failed to fetch appointments",
-          {},
-          result.errorCode || "BUSINESS_ERROR",
-          false
-        );
-      }
+    let userId = null;
+    let doctorId = null;
+    let patientId = null;
 
+    if (roleId === 1 || roleId === 2) {
+      userId =
+        req.user?.admin_id ??
+        req.user?.admin_user_id ??
+        req.user?.ref_id ??
+        req.user?.user_id ??
+        null;
+    }
+
+    if (roleId === 4) {
+      doctorId =
+        req.user?.doctor_id ??
+        req.user?.ref_id ??
+        req.user?.user_id ??
+        req.query?.doctor_id ??
+        null;
+
+      userId = req.user?.user_id ?? doctorId;
+    }
+
+    if (roleId === 5) {
+      patientId =
+        req.user?.patient_id ??
+        req.user?.ref_id ??
+        req.user?.user_id ??
+        req.query?.patient_id ??
+        null;
+
+      userId = req.user?.user_id ?? patientId;
+    }
+
+    if (![1, 2, 4, 5].includes(Number(roleId))) {
       return res.sendResponse(
-        res.STATUS.SUCCESS,
-        "Appointments fetched successfully",
-        result.data || [],
-        null,
-        true
+        res.STATUS.BUSINESS_ERROR,
+        "This role is not allowed for appointment list",
+        {
+          received_role_id: rawRoleId ?? null,
+          received_role_name: rawRoleName ?? null
+        },
+        "BUSINESS_ERROR",
+        false
       );
+    }
 
-    } catch (error) {
+    const result = await AppointmentService.getAllAppointments(
+      userId,
+      roleId,
+      doctorId,
+      patientId
+    );
 
-      console.error("GET ALL APPOINTMENTS CONTROLLER ERROR:", error);
-
+    if (!result || typeof result.success !== "boolean") {
       return res.sendResponse(
         res.STATUS.INTERNAL_SERVER_ERROR,
-        "Something went wrong. Please try again later.",
+        "Invalid server response",
         {},
-        "SERVER_ERROR"
+        "INVALID_RESPONSE"
       );
-
     }
-  });
+
+    if (!result.success) {
+      return res.sendResponse(
+        res.STATUS.BUSINESS_ERROR,
+        result.message || "Failed to fetch appointments",
+        result.data || [],
+        result.errorCode || "BUSINESS_ERROR",
+        false
+      );
+    }
+
+    return res.sendResponse(
+      res.STATUS.SUCCESS,
+      result.message || "Appointments fetched successfully",
+      result.data || [],
+      null,
+      true
+    );
+
+  } catch (error) {
+    console.error("GET ALL APPOINTMENTS CONTROLLER ERROR:", error);
+
+    return res.sendResponse(
+      res.STATUS.INTERNAL_SERVER_ERROR,
+      "Something went wrong. Please try again later.",
+      {},
+      "SERVER_ERROR"
+    );
+  }
+});
 
   /* =====================================================
      GET PENDING APPOINTMENTS FOR STANDARD ADMIN

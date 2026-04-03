@@ -186,14 +186,67 @@ class AppointmentService {
 
   }
 
-  // All aapointments destails for patient(my appointments)
-
-  static async getAllAppointments() {
-
+// All appointments details role based
+static async getAllAppointments(userId, roleId, doctorId, patientId) {
   try {
+    let whereCondition = {};
+    let specializationFilter = [];
 
-  const appointments = await Appointment.findAll({
+    /* ================= ROLE BASED FILTER ================= */
+    if (Number(roleId) === 5) {
+      // patient -> only own appointments
+      if (!patientId) {
+        return {
+          success: false,
+          message: "patientId is required for patient appointment list",
+          data: []
+        };
+      }
 
+      whereCondition.patient_id = patientId;
+    }
+    else if (Number(roleId) === 4) {
+      // doctor -> only own appointments
+      if (!doctorId) {
+        return {
+          success: false,
+          message: "doctorId is required for doctor appointment list",
+          data: []
+        };
+      }
+
+      whereCondition.doctor_id = doctorId;
+    }
+    else if (Number(roleId) === 2) {
+      // standard admin -> department wise
+      const admin = await Admin.findByPk(userId);
+
+      if (!admin || !admin.department_id) {
+        return {
+          success: true,
+          message: "No department configured for this admin",
+          data: []
+        };
+      }
+
+      specializationFilter = admin.department_id
+        .split(",")
+        .map(id => Number(id.trim()))
+        .filter(id => !isNaN(id));
+    }
+    else if (Number(roleId) === 1) {
+      // super admin -> all appointments
+    }
+    else {
+      return {
+        success: false,
+        message: "This role is not allowed for appointment list",
+        data: []
+      };
+    }
+
+    const appointments = await Appointment.findAll({
+      where: whereCondition,
       attributes: [
         "appointment_id",
         "patient_id",
@@ -211,7 +264,6 @@ class AppointmentService {
         "updated_on",
         "updated_by"
       ],
-
       include: [
         {
           model: Patient,
@@ -299,95 +351,149 @@ class AppointmentService {
           required: false
         }
       ],
-
       order: [["appointment_id", "DESC"]]
     });
 
+    let filteredAppointments = appointments;
+
+    /* patient -> only own appointments already handled by whereCondition */
+
+    /* doctor -> only own appointments + do not show booking initiated/rejected */
+    if (Number(roleId) === 4) {
+      filteredAppointments = appointments.filter(app =>
+        Number(app.booking_status) !== 1 &&
+        Number(app.booking_status) !== 3
+      );
+    }
+
+    /* standard admin -> department wise + do not show booking initiated/rejected */
+    if (Number(roleId) === 2) {
+      filteredAppointments = appointments.filter(app => {
+        const hasMatchingSpecialization =
+          app.doctor?.doctor_specializations?.some(spec =>
+            specializationFilter.includes(Number(spec.specialization_id))
+          );
+
+        const isAllowedStatus =
+          Number(app.booking_status) !== 1 &&
+          Number(app.booking_status) !== 3;
+
+        return hasMatchingSpecialization && isAllowedStatus;
+      });
+    }
+
     const admins = await Admin.findAll({
-        attributes: [
-          "admin_user_id",
-          "first_name",
-          "middle_name",
-          "last_name",
-          "email",
-          "phone_no",
-          "department_id"
-        ]
+      attributes: [
+        "admin_user_id",
+        "first_name",
+        "middle_name",
+        "last_name",
+        "email",
+        "phone_no",
+        "department_id"
+      ]
+    });
+
+    const formatted = filteredAppointments.map((item) => {
+      const specializationId = Number(
+        item.doctor?.doctor_specializations?.[0]?.specialization_id
+      );
+
+      const matchedAdmins = admins.filter((admin) => {
+        const deptIds = (admin.department_id || "")
+          .split(",")
+          .map(id => Number(id.trim()))
+          .filter(id => !isNaN(id));
+
+        return deptIds.includes(specializationId);
       });
 
-      const formatted = appointments.map((item) => {
-        const specializationId = Number(
-          item.doctor?.doctor_specializations?.[0]?.specialization_id
-        );
+      const primaryAdmin = matchedAdmins[0] || null;
 
-        const matchedAdmins = admins.filter((admin) => {
-          const deptIds = (admin.department_id || "")
-            .split(",")
-            .map(id => Number(id.trim()))
-            .filter(id => !isNaN(id));
+      return {
+        appointment_id: item.appointment_id,
+        appointment_no: item.appointment_no || null,
+        patient_id: item.patient_id,
+        doctor_id: item.doctor_id,
+        admin_id: primaryAdmin?.admin_user_id || null,
 
-          return deptIds.includes(specializationId);
-        });
+        doctor_name: [
+          item.doctor?.first_name,
+          item.doctor?.middle_name,
+          item.doctor?.last_name
+        ].filter(Boolean).join(" "),
 
-        const primaryAdmin = matchedAdmins[0] || null;
-   return {
-      appointment_id: item.appointment_id,
-      appointment_no: item.appointment_no,
-      patient_id: item.patient_id,
-      doctor_id: item.doctor_id,
-      admin_id: primaryAdmin.admin_user_id,
-      doctor_name: [
-        item.doctor?.first_name,
-        item.doctor?.middle_name,
-        item.doctor?.last_name
-      ].filter(Boolean).join(" "),
-      patient_name: [
-        item.patient?.first_name,
-        item.patient?.middle_name,
-        item.patient?.last_name
-      ].filter(Boolean).join(" "),
+        patient_name: [
+          item.patient?.first_name,
+          item.patient?.middle_name,
+          item.patient?.last_name
+        ].filter(Boolean).join(" "),
 
-      admin_name: primaryAdmin
-            ? [
-                primaryAdmin.first_name,
-                primaryAdmin.middle_name,
-                primaryAdmin.last_name
-              ].filter(Boolean).join(" ")
-            : null,
+        admin_name: primaryAdmin
+          ? [
+              primaryAdmin.first_name,
+              primaryAdmin.middle_name,
+              primaryAdmin.last_name
+            ].filter(Boolean).join(" ")
+          : null,
 
-      doctor_avatar: [item.doctor?.first_name[0], item.doctor?.last_name[0]].filter(Boolean).join(""),
-      patient_avatar: [item.patient?.first_name[0], item.patient?.last_name[0]].filter(Boolean).join(""),
+        doctor_avatar: [
+          item.doctor?.first_name?.[0],
+          item.doctor?.last_name?.[0]
+        ].filter(Boolean).join(""),
+
+        patient_avatar: [
+          item.patient?.first_name?.[0],
+          item.patient?.last_name?.[0]
+        ].filter(Boolean).join(""),
+
         doctor_phone: item.doctor?.phone_no || null,
-      patient_phone: item.patient?.phone_no || null,
-      admin_phone: primaryAdmin.phone_no || null,
-      doctor_email: item.doctor?.email || null,
-      patient_email: item.patient?.email || null,
-      admin_email: primaryAdmin.email || null,
-      doctor_gender:
-        item.doctor?.doctor_detail?.genderLookup?.domain_name || null,
-      patient_gender:
-        item.patient?.patient_detail?.genderLookup?.domain_name || null,
+        patient_phone: item.patient?.phone_no || null,
+        admin_phone: primaryAdmin?.phone_no || null,
+
+        doctor_email: item.doctor?.email || null,
+        patient_email: item.patient?.email || null,
+        admin_email: primaryAdmin?.email || null,
+
+        doctor_gender:
+          item.doctor?.doctor_detail?.genderLookup?.domain_name || null,
+
+        patient_gender:
+          item.patient?.patient_detail?.genderLookup?.domain_name || null,
+
         patient_dob: item.patient?.patient_detail?.dob || null,
-      specialization: item.doctor?.doctor_specializations?.[0]?.specializationLookup?.domain_name || null,
-      doctor_bio: item.doctor?.doctor_detail?.sort_desc,
-      license_number: item.doctor?.doctor_detail?.licence_number,
-      experience: item.doctor?.doctor_detail?.experience,
-      appointment_date: item.booking_date,
-      appointment_time: item.booking_time,
-      booking_no: item.booking_no, 
-      booking_status: item.statusLookup?.domain_name || null,
-      booking_time: item.created_on.toISOString().split("T")[1].split(".")[0],
-      
-      doc_slot: item.availability
-        ? `${item.availability.start_time} - ${item.availability.end_time}`
-        : null,
 
-      fees: item.availability?.fees || null,
+        specialization:
+          item.doctor?.doctor_specializations?.[0]?.specializationLookup?.domain_name || null,
 
-      created_on: item.created_on.toISOString().split("T")[0],
-      created_by: item.created_by
-       };
-      });
+        doctor_bio: item.doctor?.doctor_detail?.sort_desc || null,
+        license_number: item.doctor?.doctor_detail?.licence_number || null,
+        experience: item.doctor?.doctor_detail?.experience || null,
+
+        appointment_date: item.booking_date,
+        appointment_time: item.booking_time,
+        booking_no: item.booking_no,
+        booking_status: item.statusLookup?.domain_name || null,
+
+        booking_time: item.created_on
+          ? item.created_on.toISOString().split("T")[1].split(".")[0]
+          : null,
+
+        doc_slot: item.availability
+          ? `${item.availability.start_time} - ${item.availability.end_time}`
+          : null,
+
+        fees: item.availability?.fees || null,
+
+        created_on: item.created_on
+          ? item.created_on.toISOString().split("T")[0]
+          : null,
+
+        created_by: item.created_by,
+        updated_by: item.updated_by,
+        updated_on: item.updated_on
+      };
+    });
 
     return {
       success: true,
@@ -396,18 +502,15 @@ class AppointmentService {
     };
 
   } catch (error) {
-
     return {
       success: false,
       message: error.message,
       data: []
     };
-
   }
-
 }
 /* =====================================================
-   GET APPOINTMENTS (ROLE ID BASED STATUS FILTER)
+   GET APPOINTMENTS Requests (ROLE ID BASED STATUS FILTER)
 ===================================================== */
 static async getPendingAppointmentsByAdmin(adminId, roleId, doctorId = null) {
   try {
