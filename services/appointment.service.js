@@ -192,7 +192,7 @@ class AppointmentService {
 
   try {
 
-   const appointments = await Appointment.findAll({
+  const appointments = await Appointment.findAll({
 
       attributes: [
         "appointment_id",
