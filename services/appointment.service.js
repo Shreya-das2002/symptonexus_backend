@@ -620,13 +620,12 @@ static async getPendingAppointmentsByAdmin(adminId, roleId, doctorId = null) {
       specialization:
         app.doctor?.doctor_specializations?.[0]?.specializationLookup?.domain_name || null,
 
-      booking_date: app.booking_date || null,
-      booking_time: app.booking_time || null,
+      appointment_date: app.booking_date || null,
+      appointment_time: app.booking_time || null,
       description: app.description || null,
       document_id: app.document_id || null,
-
-      booking_status: app.booking_status,
-      booking_status_name: app.statusLookup?.domain_name || null,
+      booking_time: app.created_on.toISOString().split("T")[1].split(".")[0],
+      booking_status: app.statusLookup?.domain_name || null,
 
       doctor_slot: app.availability
         ? `${app.availability.start_time} - ${app.availability.end_time}`
