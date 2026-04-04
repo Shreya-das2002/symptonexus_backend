@@ -10,6 +10,19 @@ const patientDetails = require("../models/Patient_Details");
 const Patient = require("../models/patient");
 const Role = require("../models/Role");
 
+
+const formatTimeTo12Hour = (time) => {
+  if (!time) return null;
+
+  const [hour, minute] = time.split(":");
+  let h = parseInt(hour, 10);
+  const ampm = h >= 12 ? "PM" : "AM";
+
+  h = h % 12;
+  h = h ? h : 12; // 0 => 12
+
+  return `${h}:${minute} ${ampm}`;
+}
 class AppointmentService {
 
   /* CREATE APPOINTMENT BY PATIENT */
@@ -187,6 +200,7 @@ class AppointmentService {
   }
 
 // All appointments details role based
+
 static async getAllAppointments(userId, roleId, doctorId, patientId) {
   try {
     let whereCondition = {};
@@ -480,7 +494,7 @@ static async getAllAppointments(userId, roleId, doctorId, patientId) {
           : null,
 
         doc_slot: item.availability
-          ? `${item.availability.start_time} - ${item.availability.end_time}`
+          ? `${formatTimeTo12Hour(item.availability.start_time)} - ${formatTimeTo12Hour(item.availability.end_time)}`
           : null,
 
         fees: item.availability?.fees || null,

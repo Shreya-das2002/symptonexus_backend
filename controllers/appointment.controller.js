@@ -397,7 +397,10 @@ static cancelAppointment = asyncHandler(async (req, res) => {
     }
 
     /* ================= USER ID MAPPING ================= */
-    let userId = req.user?.doctor_id ?? null;
+    let userId =
+      req.user?.doctor_id ??
+      req.user?.patient_id ??
+      null;
     let patientId = null;
     let doctorId = null;
 
