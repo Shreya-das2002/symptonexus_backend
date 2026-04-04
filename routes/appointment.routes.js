@@ -8,5 +8,6 @@ router.post("/create", authMiddleware, AppointmentController.createAppointment);
 router.get("/list", authMiddleware, AppointmentController.getAllAppointments);
 router.get("/pending-list", authMiddleware, AppointmentController.getPendingAppointmentsByAdmin);
 router.put("/update-status", authMiddleware, AppointmentController.updateAppointmentStatus);
+router.put("/cancel-appointment", authMiddleware, AppointmentController.cancelAppointment);
 
 module.exports = router;

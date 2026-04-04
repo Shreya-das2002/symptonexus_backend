@@ -902,6 +902,146 @@ static async updateAppointmentStatus(appointmentId, action, updatedBy) {
 
 }
 
+//cancel by patient and doctor
+
+static async cancelAppointment(appointmentId, roleId, userId, patientId = null, doctorId = null) {
+
+  const t = await sequelize.transaction();
+
+  try {
+
+    if (!appointmentId || !roleId) {
+      await t.rollback();
+      return {
+        success: false,
+        message: "appointmentId and roleId are required"
+      };
+    }
+
+    /* ROLE BASE VALIDATION */
+    if (Number(roleId) === 5 && !patientId) {
+      await t.rollback();
+      return {
+        success: false,
+        message: "patientId is required for patient cancel"
+      };
+    }
+
+    if (Number(roleId) === 4 && !doctorId) {
+      await t.rollback();
+      return {
+        success: false,
+        message: "doctorId is required for doctor cancel"
+      };
+    }
+
+    const appointment = await Appointment.findByPk(appointmentId, { transaction: t });
+
+    if (!appointment) {
+      await t.rollback();
+      return {
+        success: false,
+        message: "Appointment not found"
+      };
+    }
+
+    let statusName = "";
+
+    /* ================= ROLE BASED CHECK ================= */
+
+    if (Number(roleId) === 5) {
+      // PATIENT
+      if (appointment.patient_id !== Number(patientId)) {
+        await t.rollback();
+        return {
+          success: false,
+          message: "Patient not authorized to cancel this appointment"
+        };
+      }
+
+      statusName = "Canceled by Patient";
+    }
+
+    else if (Number(roleId) === 4) {
+      // DOCTOR
+      if (appointment.doctor_id !== Number(doctorId)) {
+        await t.rollback();
+        return {
+          success: false,
+          message: "Doctor not authorized to cancel this appointment"
+        };
+      }
+
+      statusName = "Canceled by Doctor";
+    }
+
+    else {
+      await t.rollback();
+      return {
+        success: false,
+        message: "Only patient or doctor can cancel appointment"
+      };
+    }
+
+    /* FETCH DOMAIN VALUE */
+    const cancelStatus = await DomainLookup.findOne({
+      where: {
+        domain_type: "booking_status",
+        domain_name: statusName
+      },
+      transaction: t
+    });
+
+    if (!cancelStatus) {
+      await t.rollback();
+      return {
+        success: false,
+        message: `${statusName} not configured in domain lookup`
+      };
+    }
+
+    /* OPTIONAL: prevent double cancel */
+    if ([7, 8].includes(Number(appointment.booking_status))) {
+      await t.rollback();
+      return {
+        success: false,
+        message: "Appointment already cancelled"
+      };
+    }
+
+    /* UPDATE */
+    await appointment.update({
+      booking_status: Number(cancelStatus.domain_value),
+      updated_by: userId,
+      updated_on: new Date()
+    }, { transaction: t });
+
+    await t.commit();
+
+    return {
+      success: true,
+      message: `Appointment ${statusName}`,
+      data: {
+        appointment_id: appointment.appointment_id,
+        booking_status: appointment.booking_status,
+        updated_by: userId,
+        updated_on: new Date()
+      }
+    };
+
+  } catch (error) {
+
+    await t.rollback();
+
+    console.error("CANCEL ERROR:", error);
+
+    return {
+      success: false,
+      message: error.message
+    };
+  }
+}
+
 }
 
 module.exports = AppointmentService;

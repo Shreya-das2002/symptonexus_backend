@@ -351,6 +351,121 @@ static updateAppointmentStatus = asyncHandler(async (req, res) => {
   }
 });
 
+/* =====================================================
+   CANCEL APPOINTMENT (PATIENT / DOCTOR)
+===================================================== */
+static cancelAppointment = asyncHandler(async (req, res) => {
+  try {
+
+    const { appointment_id } = req.body;
+
+    if (!appointment_id) {
+      return res.sendResponse(
+        res.STATUS.BUSINESS_ERROR,
+        "appointment_id is required",
+        {},
+        "BUSINESS_ERROR",
+        false
+      );
+    }
+
+    /* ================= ROLE RESOLVE ================= */
+    const rawRoleId = req.user?.role_id ?? req.user?.user_type ?? null;
+    const rawRoleName = req.user?.role_name ?? req.user?.role ?? null;
+
+    let roleId = null;
+
+    if (rawRoleId && !isNaN(Number(rawRoleId))) {
+      roleId = Number(rawRoleId);
+    }
+
+    if (!roleId && typeof rawRoleName === "string") {
+      const roleName = rawRoleName.trim().toLowerCase();
+
+      if (roleName === "doctor") roleId = 4;
+      else if (roleName === "patient") roleId = 5;
+    }
+
+    if (![4, 5].includes(Number(roleId))) {
+      return res.sendResponse(
+        res.STATUS.BUSINESS_ERROR,
+        "Only doctor or patient can cancel appointment",
+        {},
+        "BUSINESS_ERROR",
+        false
+      );
+    }
+
+    /* ================= USER ID MAPPING ================= */
+    let userId = req.user?.doctor_id ?? null;
+    let patientId = null;
+    let doctorId = null;
+
+    if (roleId === 5) {
+      patientId =
+        req.user?.patient_id ??
+        req.user?.ref_id ??
+        req.user?.user_id ??
+        null;
+    }
+
+    if (roleId === 4) {
+      doctorId =
+        req.user?.doctor_id ??
+        req.user?.ref_id ??
+        req.user?.user_id ??
+        null;
+    }
+
+    /* ================= CALL SERVICE ================= */
+    const result = await AppointmentService.cancelAppointment(
+      Number(appointment_id),
+      roleId,
+      userId,
+      patientId,
+      doctorId
+    );
+
+    if (!result || typeof result.success !== "boolean") {
+      return res.sendResponse(
+        res.STATUS.INTERNAL_SERVER_ERROR,
+        "Invalid server response",
+        {},
+        "INVALID_RESPONSE"
+      );
+    }
+
+    if (!result.success) {
+      return res.sendResponse(
+        res.STATUS.BUSINESS_ERROR,
+        result.message || "Failed to cancel appointment",
+        {},
+        result.errorCode || "BUSINESS_ERROR",
+        false
+      );
+    }
+
+    return res.sendResponse(
+      res.STATUS.SUCCESS,
+      result.message || "Appointment cancelled successfully",
+      result.data || {},
+      null,
+      true
+    );
+
+  } catch (error) {
+
+    console.error("CANCEL APPOINTMENT CONTROLLER ERROR:", error);
+
+    return res.sendResponse(
+      res.STATUS.INTERNAL_SERVER_ERROR,
+      "Something went wrong. Please try again later.",
+      {},
+      "SERVER_ERROR"
+    );
+  }
+});
+
 }
 
 module.exports = AppointmentController;
