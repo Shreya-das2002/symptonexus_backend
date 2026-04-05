@@ -79,6 +79,8 @@ static getAllAppointments = asyncHandler(async (req, res) => {
         roleId = 1;
       } else if (roleName === "standard admin") {
         roleId = 2;
+      } else if (roleName === "guest admin") {
+        roleId = 3;
       } else if (roleName === "doctor") {
         roleId = 4;
       } else if (roleName === "patient") {
@@ -90,12 +92,22 @@ static getAllAppointments = asyncHandler(async (req, res) => {
     let doctorId = null;
     let patientId = null;
 
-    if (roleId === 1 || roleId === 2) {
+    if (roleId === 1 || roleId === 2 ) {
       userId =
         req.user?.admin_id ??
         req.user?.admin_user_id ??
         req.user?.ref_id ??
         req.user?.user_id ??
+        null;
+    }
+
+     /* guest admin -> IMPORTANT: use user_id first */
+    if (roleId === 3) {
+      userId =
+        req.user?.user_id ??
+        req.user?.admin_id ??
+        req.user?.admin_user_id ??
+        req.user?.ref_id ??
         null;
     }
 
@@ -121,7 +133,7 @@ static getAllAppointments = asyncHandler(async (req, res) => {
       userId = req.user?.user_id ?? patientId;
     }
 
-    if (![1, 2, 4, 5].includes(Number(roleId))) {
+    if (![1, 2, 3, 4, 5].includes(Number(roleId))) {
       return res.sendResponse(
         res.STATUS.BUSINESS_ERROR,
         "This role is not allowed for appointment list",

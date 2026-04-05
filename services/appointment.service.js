@@ -205,6 +205,7 @@ static async getAllAppointments(userId, roleId, doctorId, patientId) {
   try {
     let whereCondition = {};
     let specializationFilter = [];
+    let doctorWhereCondition = {};
 
     /* ================= ROLE BASED FILTER ================= */
     if (Number(roleId) === 5) {
@@ -230,6 +231,17 @@ static async getAllAppointments(userId, roleId, doctorId, patientId) {
       }
 
       whereCondition.doctor_id = doctorId;
+    } else if (Number(roleId) === 3) {
+      // guest admin -> show appointments only for doctors created by this guest admin
+      if (!userId) {
+        return {
+          success: false,
+          message: "userId is required for guest admin appointment list",
+          data: []
+        };
+      }
+
+      doctorWhereCondition.created_by = userId;
     }
     else if (Number(roleId) === 2) {
       // standard admin -> department wise
@@ -320,6 +332,7 @@ static async getAllAppointments(userId, roleId, doctorId, patientId) {
             "phone_no"
           ],
           required: true,
+           where: Object.keys(doctorWhereCondition).length ? doctorWhereCondition : undefined,
           include: [
             {
               model: DoctorDetails,
@@ -395,6 +408,13 @@ static async getAllAppointments(userId, roleId, doctorId, patientId) {
         return hasMatchingSpecialization && isAllowedStatus;
       });
     }
+
+    /* guest admin -> only confirmed appointments */
+        if (Number(roleId) === 3) {
+          filteredAppointments = appointments.filter(app =>
+            Number(app.booking_status) === 2
+          );
+        }
 
     const admins = await Admin.findAll({
       attributes: [
