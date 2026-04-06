@@ -179,17 +179,21 @@ class AcknowledgementPdfService {
               appointment.availability.start_time
             )} - ${this.formatTimeTo12Hour(appointment.availability.end_time)}`
           : "",
-        experience: appointment.doctor?.doctor_detail?.experience || "",
-        fees: appointment.availability?.fees || "",
+        experience: `${!appointment.doctor?.doctor_detail?.experience
+        ? "Fresher"
+        : appointment.doctor.doctor_detail.experience === 1
+        ? "1 year"
+        : `${appointment.doctor.doctor_detail.experience} years`}`,
+        fees: `${appointment.availability?.fees} INR`,
 
         appointment_id:
           appointment.appointment_no || appointment.appointment_id || "",
         appointment_date: appointment.booking_date || "",
         appointment_time: this.formatTimeTo12Hour(appointment.booking_time),
         booking_status: appointment.statusLookup?.domain_name || "",
-        consultation: "General Consultation",
+        consultation: "Follow Up",
 
-        consultation_type: "General",
+        consultation_type: "In-Person",
         consultation_reason: appointment.description || "",
 
         booking_no: appointment.booking_no || "",
@@ -202,9 +206,6 @@ class AcknowledgementPdfService {
             )
           : "",
         reporting_time: this.formatTimeTo12Hour(appointment.booking_time),
-        contact_name: "Standard Admin",
-        contact_phone: "(official number)",
-        contact_email: "(official mail)",
       };
 
       const templatePath = path.join(
