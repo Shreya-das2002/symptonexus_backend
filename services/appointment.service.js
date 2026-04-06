@@ -517,6 +517,9 @@ static async getAllAppointments(userId, roleId, doctorId, patientId) {
           ? `${formatTimeTo12Hour(item.availability.start_time)} - ${formatTimeTo12Hour(item.availability.end_time)}`
           : null,
 
+          start_time: formatTimeTo12Hour(item.availability.start_time),
+          end_time: formatTimeTo12Hour(item.availability.end_time),
+
         fees: item.availability?.fees || null,
 
         created_on: item.created_on
