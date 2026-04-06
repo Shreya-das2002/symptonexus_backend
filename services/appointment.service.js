@@ -1079,6 +1079,105 @@ static async cancelAppointment(appointmentId, roleId, userId, patientId = null, 
   }
 }
 
+/* =====================================================
+   ASSIGN APPOINTMENT TIME BY ADMIN
+===================================================== */
+static async assignAppointmentTime(payload) {
+  const t = await sequelize.transaction();
+
+  try {
+    const { appointment_id, appointment_time, admin_id } = payload;
+
+    /* VALIDATION */
+    if (!appointment_id || !appointment_time || !admin_id) {
+      await t.rollback();
+      return {
+        success: false,
+        message: "appointment_id, appointment_time and admin_id are required"
+      };
+    }
+
+    /* CHECK APPOINTMENT EXISTS */
+    const appointment = await Appointment.findByPk(appointment_id, {
+      transaction: t
+    });
+
+    if (!appointment) {
+      await t.rollback();
+      return {
+        success: false,
+        message: "Appointment not found"
+      };
+    }
+
+    /* OPTIONAL: CHECK ADMIN EXISTS */
+    const admin = await Admin.findByPk(admin_id, {
+      transaction: t
+    });
+
+    if (!admin) {
+      await t.rollback();
+      return {
+        success: false,
+        message: "Admin not found"
+      };
+    }
+
+    /* GET SLOT ASSIGNED STATUS FROM DOMAIN LOOKUP */
+    const slotAssignedStatus = await DomainLookup.findOne({
+      where: {
+        domain_type: "booking_status",
+        domain_name: "Slot Assigned"
+      },
+      transaction: t
+    });
+
+    if (!slotAssignedStatus) {
+      await t.rollback();
+      return {
+        success: false,
+        message: "Slot Assigned status not found in domain lookup"
+      };
+    }
+
+    /* UPDATE APPOINTMENT */
+    await appointment.update(
+      {
+        booking_time: appointment_time,
+        booking_status: Number(slotAssignedStatus.domain_value),
+        updated_by: admin_id,
+        updated_on: new Date()
+      },
+      { transaction: t }
+    );
+
+    await t.commit();
+
+    return {
+      success: true,
+      message: "Appointment time assigned successfully",
+      data: {
+        appointment_id: appointment.appointment_id,
+        booking_date: appointment.booking_date,
+        booking_time: appointment.booking_time,
+        booking_status: appointment.booking_status,
+        booking_status_name: slotAssignedStatus.domain_name,
+        updated_by: appointment.updated_by,
+        updated_on: appointment.updated_on
+      }
+    };
+  } catch (error) {
+    await t.rollback();
+
+    console.error("ASSIGN APPOINTMENT TIME ERROR:", error);
+
+    return {
+      success: false,
+      message: error.message
+    };
+  }
+}
+
 }
 
 module.exports = AppointmentService;

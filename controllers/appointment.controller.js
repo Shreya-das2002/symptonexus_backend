@@ -481,6 +481,89 @@ static cancelAppointment = asyncHandler(async (req, res) => {
   }
 });
 
+/* =====================================================
+   ASSIGN APPOINTMENT TIME (ADMIN)
+===================================================== */
+static assignAppointmentTime = asyncHandler(async (req, res) => {
+  try {
+
+    const { appointment_id, appointment_time } = req.body;
+
+    if (!appointment_id || !appointment_time) {
+      return res.sendResponse(
+        res.STATUS.BUSINESS_ERROR,
+        "appointment_id and appointment_time are required",
+        {},
+        "BUSINESS_ERROR",
+        false
+      );
+    }
+
+    /* GET ADMIN ID FROM TOKEN */
+    const adminId =
+      req.user?.admin_id ||
+      req.user?.admin_user_id ||
+      req.user?.user_id ||
+      null;
+
+    if (!adminId) {
+      return res.sendResponse(
+        res.STATUS.BUSINESS_ERROR,
+        "Admin not authorized",
+        {},
+        "BUSINESS_ERROR",
+        false
+      );
+    }
+
+    /* CALL SERVICE */
+    const result = await AppointmentService.assignAppointmentTime({
+      appointment_id,
+      appointment_time,
+      admin_id: adminId
+    });
+
+    if (!result || typeof result.success !== "boolean") {
+      return res.sendResponse(
+        res.STATUS.INTERNAL_SERVER_ERROR,
+        "Invalid server response",
+        {},
+        "INVALID_RESPONSE"
+      );
+    }
+
+    if (!result.success) {
+      return res.sendResponse(
+        res.STATUS.BUSINESS_ERROR,
+        result.message || "Failed to assign appointment time",
+        {},
+        result.errorCode || "BUSINESS_ERROR",
+        false
+      );
+    }
+
+    return res.sendResponse(
+      res.STATUS.SUCCESS,
+      result.message || "Appointment time assigned successfully",
+      result.data || {},
+      null,
+      true
+    );
+
+  } catch (error) {
+
+    console.error("ASSIGN APPOINTMENT TIME CONTROLLER ERROR:", error);
+
+    return res.sendResponse(
+      res.STATUS.INTERNAL_SERVER_ERROR,
+      "Something went wrong. Please try again later.",
+      {},
+      "SERVER_ERROR"
+    );
+
+  }
+});
+
 }
 
 module.exports = AppointmentController;
