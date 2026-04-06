@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Acknowledgement</title>
+  <style>
+    body {
+      font-family: "Times New Roman", serif;
+      padding: 24px;
+      color: #000;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 18px;
+    }
+    .clinic {
+      text-align: center;
+      margin-bottom: 30px;
+      line-height: 1.6;
+      font-size: 18px;
+    }
+    .section-title {
+      font-size: 20px;
+      font-weight: bold;
+      margin: 24px 0 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    td {
+      border: 1px solid #222;
+      padding: 8px 10px;
+      vertical-align: top;
+    }
+    td.label {
+      width: 35%;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>ACKNOWLEDGEMENT</h1>
+
+  <div class="clinic">
+    <div><strong>Clinic SymptoNexus</strong></div>
+    <div>Krishnanagar, Nadia</div>
+    <div>West Bengal - 741102</div>
+    <div>Contact: +91 98765 43210</div>
+    <div>Email: symptonexus333@gmail.com</div>
+  </div>
+
+  <div class="section-title">Patient Details</div>
+  <table>
+    <tr><td class="label">Name:</td><td>{{patient_name}}</td></tr>
+    <tr><td class="label">Gender:</td><td>{{patient_gender}}</td></tr>
+    <tr><td class="label">DOB:</td><td>{{patient_dob}}</td></tr>
+    <tr><td class="label">Age:</td><td>{{patient_age}}</td></tr>
+    <tr><td class="label">Phone:</td><td>{{patient_phone}}</td></tr>
+  </table>
+
+  <div class="section-title">Doctor Summary</div>
+  <table>
+    <tr><td class="label">Name:</td><td>{{doctor_name}}</td></tr>
+    <tr><td class="label">Specialization:</td><td>{{specialization}}</td></tr>
+    <tr><td class="label">Bio:</td><td>{{doctor_bio}}</td></tr>
+    <tr><td class="label">Phone:</td><td>{{doctor_phone}}</td></tr>
+    <tr><td class="label">License Number:</td><td>{{license_number}}</td></tr>
+    <tr><td class="label">Slot Time:</td><td>{{slot_time}}</td></tr>
+    <tr><td class="label">Experience:</td><td>{{experience}}</td></tr>
+    <tr><td class="label">Fees:</td><td>{{fees}}</td></tr>
+  </table>
+
+  <div class="section-title">Appointment Summary</div>
+  <table>
+    <tr><td class="label">ID:</td><td>{{appointment_id}}</td></tr>
+    <tr><td class="label">Date:</td><td>{{appointment_date}}</td></tr>
+    <tr><td class="label">Time:</td><td>{{appointment_time}}</td></tr>
+    <tr><td class="label">Status:</td><td>{{booking_status}}</td></tr>
+    <tr><td class="label">Consultation:</td><td>{{consultation}}</td></tr>
+  </table>
+
+  <div class="section-title">Consultation Details</div>
+  <table>
+    <tr><td class="label">Consultation Type:</td><td>{{consultation_type}}</td></tr>
+    <tr><td class="label">Consultation Reason:</td><td>{{consultation_reason}}</td></tr>
+  </table>
+
+  <div class="section-title">Booking Details</div>
+  <table>
+    <tr><td class="label">Booking Number:</td><td>{{booking_no}}</td></tr>
+    <tr><td class="label">Booking Date:</td><td>{{booking_date}}</td></tr>
+    <tr><td class="label">Booking Time:</td><td>{{booking_time}}</td></tr>
+    <tr><td class="label">Reporting Time:</td><td>{{reporting_time}}</td></tr>
+    <tr><td class="label">Contact Name:</td><td>{{contact_name}}</td></tr>
+    <tr><td class="label">Phone Number:</td><td>{{contact_phone}}</td></tr>
+    <tr><td class="label">Email:</td><td>{{contact_email}}</td></tr>
+  </table>
+</body>
+</html>
