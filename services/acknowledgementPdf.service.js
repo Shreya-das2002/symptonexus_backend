@@ -10,6 +10,7 @@ const DomainLookup = require("../models/Domain_lookup");
 const patientDetails = require("../models/Patient_Details");
 const Patient = require("../models/patient");
 
+
 const replaceTemplatePlaceholders = require("../utils/templateReplacer");
 const generatePdfFromHtml = require("../utils/generatePdf");
 
@@ -125,8 +126,25 @@ class AcknowledgementPdfService {
           message: "Appointment not found",
         };
       }
+        const logoPath = path.join(process.cwd(), "assets", "logo.png");
+
+            const logoBase64 = fs.readFileSync(logoPath, {
+            encoding: "base64",
+            });
+
+        const logoSrc = `data:image/png;base64,${logoBase64}`;
+
+        const watermarkPath = path.join(process.cwd(), "assets", "watermark.png");
+
+            const watermarkBase64 = fs.readFileSync(watermarkPath, {
+            encoding: "base64",
+            });
+
+            const watermarkSrc = `data:image/png;base64,${watermarkBase64}`;
 
       const data = {
+        logo: logoSrc,
+        watermark: watermarkSrc,
         patient_name: [
           appointment.patient?.first_name,
           appointment.patient?.middle_name,
