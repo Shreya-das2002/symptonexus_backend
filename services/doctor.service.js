@@ -576,6 +576,10 @@ else if (role?.toLowerCase() === "patient") {
   whereCondition.status = "Active";
 }
 
+else {
+  whereCondition.status = "Active";
+}
+
     /* FETCH DOCTORS */
 
     const doctors = await Doctor.findAll({
@@ -710,6 +714,16 @@ else if (role?.toLowerCase() === "patient") {
         )
       );
     }
+
+    if (!role && specializationId) {
+  const spId = Number(specializationId);
+
+  filteredDoctors = filteredDoctors.filter(doc =>
+    doc.doctor_specializations?.some(spec =>
+      Number(spec.specialization_id) === spId
+    )
+  );
+}
 
 
     /* FINAL RESPONSE */
