@@ -24,5 +24,5 @@ module.exports = (app) => {
   app.use("/api", dashboardRoutes);
   app.use("/api/account", accountRoutes);
   app.use("/api/appointment", appointmentRoutes);
-  app.use("/api/acknowledgement", acknowledgementPdfRoutes);
+  app.use("/api", acknowledgementPdfRoutes);
 };

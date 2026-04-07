@@ -222,6 +222,7 @@ class AcknowledgementPdfService {
         success: true,
         message: "Acknowledgement PDF generated successfully",
         data: pdfBuffer,
+        
       };
     } catch (error) {
       console.error("ACKNOWLEDGEMENT PDF SERVICE ERROR:", error);

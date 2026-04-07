@@ -4,7 +4,7 @@ const AcknowledgementPdfService = require("../services/acknowledgementPdf.servic
 class AcknowledgementPdfController {
   static generateAcknowledgementPdf = asyncHandler(async (req, res) => {
     try {
-      const { appointment_id } = req.params;
+      const { appointment_id, patient_id } = req.body;
 
       if (!appointment_id) {
         return res.sendResponse(
@@ -16,9 +16,20 @@ class AcknowledgementPdfController {
         );
       }
 
+      if (!patient_id) {
+        return res.sendResponse(
+          res.STATUS.BUSINESS_ERROR,
+          "patient_id is required",
+          {},
+          "BUSINESS_ERROR",
+          false
+        );
+      }
+
       const result =
         await AcknowledgementPdfService.generateAcknowledgementPdf(
-          Number(appointment_id)
+          Number(appointment_id),
+          Number(patient_id)
         );
 
       if (!result || typeof result.success !== "boolean") {
