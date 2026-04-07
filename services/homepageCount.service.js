@@ -2,18 +2,12 @@ const sequelize = require("../config/database");
 
 const User = require("../models/User");
 const Role = require("../models/Role");
-const UserRoleMapping = require("../models/User_role_mapping");
-  const DoctorSpecialization = require("../models/Doctor_specalization");
-  const { fn, col } = require("sequelize");
-
+const Patient =require("../models/patient");
+const { Doctor, DoctorSpecialization } = require("../models");
+const { fn, col } = require("sequelize");
 
 class DashboardService {
-
-/* =====================================================
-   DASHBOARD COUNT
-===================================================== */
-
-static async getDashboardCount() {
+ static async getDashboardCount() {
 
   const t = await sequelize.transaction();
 
@@ -21,28 +15,18 @@ static async getDashboardCount() {
 
     /* ================= PATIENT COUNT ================= */
 
-    const patientRole = await Role.findOne({
-      where: { role_name: "patient" },
-      transaction: t
-    });
-
-    const doctorRole = await Role.findOne({
-      where: { role_name: "doctor" },
-      transaction: t
-    });
-
-    const patientCount = await UserRoleMapping.count({
+    const patientCount = await Patient.count({
       where: {
-        role_id: patientRole.role_id,
-        status: 1
+        status: "Active"
       },
       transaction: t
     });
 
-    const doctorCount = await UserRoleMapping.count({
+    /* ================= DOCTOR COUNT ================= */
+
+    const doctorCount = await Doctor.count({
       where: {
-        role_id: doctorRole.role_id,
-        status: 1
+        status: "Active"
       },
       transaction: t
     });
@@ -57,9 +41,7 @@ static async getDashboardCount() {
       }
     };
 
-  }
-
-  catch (error) {
+  } catch (error) {
 
     await t.rollback();
 
@@ -73,47 +55,48 @@ static async getDashboardCount() {
   }
 
 }
+  static async getSpecializationWiseDoctorCount() {
+    const t = await sequelize.transaction();
 
-    /* ================= SPECIALIZATION COUNT ================= */
+    try {
+      const specializationWiseCount = await DoctorSpecialization.findAll({
+        attributes: [
+          "specialization_id",
+          [fn("COUNT", col("doctor.doctor_id")), "doctor_count"]
+        ],
+        include: [
+          {
+            model: Doctor,
+            as: "doctor",
+            attributes: [],
+            required: true,
+            where: {
+              status: "Active"
+            }
+          }
+        ],
+        group: ["specialization_id"],
+        raw: true,
+        transaction: t
+      });
 
-static async getSpecializationWiseDoctorCount() {
+      await t.commit();
 
-  const t = await sequelize.transaction();
+      return {
+        success: true,
+        data: specializationWiseCount
+      };
+    } catch (error) {
+      await t.rollback();
 
-  try {
+      console.error("SPECIALIZATION COUNT ERROR:", error);
 
-    const specializationWiseCount = await DoctorSpecialization.findAll({
-      attributes: [
-        "specialization_id",
-        [fn("COUNT", col("doctor_id")), "doctor_count"]
-      ],
-      group: ["specialization_id"],
-      raw: true,
-      transaction: t
-    });
-
-    await t.commit();
-
-    return {
-      success: true,
-      data: specializationWiseCount
-    };
-
-  } catch (error) {
-
-    await t.rollback();
-
-    console.error("SPECIALIZATION COUNT ERROR:", error);
-
-    return {
-      success: false,
-      message: "Failed to fetch specialization wise doctor count"
-    };
-
+      return {
+        success: false,
+        message: "Failed to fetch specialization wise doctor count"
+      };
+    }
   }
-
-}
-
 }
 
 module.exports = DashboardService;
