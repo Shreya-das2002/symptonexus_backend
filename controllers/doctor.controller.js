@@ -157,81 +157,60 @@ class DoctorController {
 });
 
  /* =====================================================
-     GET DOCTOR LIST (SUPERADMIN / STANDARD ADMIN)
-  ===================================================== */
-  static getDoctorList = asyncHandler(async (req, res) => {
+   GET DOCTOR LIST (PUBLIC / PATIENT / ADMIN)
+===================================================== */
+static getDoctorList = asyncHandler(async (req, res) => {
+  try {
+    const userId = req.user?.user_id || null;
+    const role = req.user?.role || null;
+    const adminId = req.user?.admin_id || req.user?.ref_id || null;
 
-    try {
+    const { specializationId } = req.query;
 
-      const userId =
-        req.user.user_id;
+    const result = await DoctorService.getDoctorList(
+      userId,
+      adminId,
+      role,
+      specializationId
+    );
 
-      const role =
-        req.user.role;
-
-      const adminId =
-        req.user.admin_id ||
-        req.user.ref_id ||
-        null;
-
-        const { specializationId } = req.query;
-
-      const result =
-        await DoctorService.getDoctorList(
-          userId,
-          adminId,
-          role, 
-          specializationId
-        );
-
-      if (!result || typeof result.success !== "boolean") {
-
-        return res.sendResponse(
-          res.STATUS.INTERNAL_SERVER_ERROR,
-          "Invalid server response",
-          {},
-          "INVALID_RESPONSE"
-        );
-
-      }
-
-      if (!result.success) {
-
-        return res.sendResponse(
-          res.STATUS.BUSINESS_ERROR,
-          result.message ||
-          "Failed to fetch doctor list",
-          {},
-          result.errorCode || "BUSINESS_ERROR",
-          false
-        );
-
-      }
-
-      return res.sendResponse(
-        res.STATUS.SUCCESS,
-        "Doctor list fetched successfully",
-        result.data || [],
-        null,
-        true
-      );
-
-    }
-    catch (error) {
-
-      console.error("GET DOCTOR LIST ERROR:", error);
-
+    if (!result || typeof result.success !== "boolean") {
       return res.sendResponse(
         res.STATUS.INTERNAL_SERVER_ERROR,
-        "Something went wrong. Please try again later.",
+        "Invalid server response",
         {},
-        "SERVER_ERROR"
+        "INVALID_RESPONSE"
       );
-
     }
 
-  });
+    if (!result.success) {
+      return res.sendResponse(
+        res.STATUS.BUSINESS_ERROR,
+        result.message || "Failed to fetch doctor list",
+        {},
+        result.errorCode || "BUSINESS_ERROR",
+        false
+      );
+    }
 
+    return res.sendResponse(
+      res.STATUS.SUCCESS,
+      "Doctor list fetched successfully",
+      result.data || [],
+      null,
+      true
+    );
+  } catch (error) {
+    console.error("GET DOCTOR LIST ERROR:", error);
+
+    return res.sendResponse(
+      res.STATUS.INTERNAL_SERVER_ERROR,
+      "Something went wrong. Please try again later.",
+      {},
+      "SERVER_ERROR"
+    );
+  }
+});
   /* ===================== DEACTIVATE ADMIN ===================== */
   
 static deactivateDoctor = asyncHandler(async (req, res) => {
