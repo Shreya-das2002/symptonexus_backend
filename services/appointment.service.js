@@ -412,7 +412,11 @@ static async getAllAppointments(userId, roleId, doctorId, patientId) {
     /* guest admin -> only confirmed appointments */
         if (Number(roleId) === 3) {
           filteredAppointments = appointments.filter(app =>
-            Number(app.booking_status) === 2
+            Number(app.booking_status) !== 1 &&
+            Number(app.booking_status) !== 2 &&
+            Number(app.booking_status) !== 3 &&
+            Number(app.booking_status) !== 7 &&
+            Number(app.booking_status) !== 8
           );
         }
 
@@ -535,6 +539,159 @@ static async getAllAppointments(userId, roleId, doctorId, patientId) {
     return {
       success: true,
       message: "Appointments fetched successfully",
+      data: formatted
+    };
+
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message,
+      data: []
+    };
+  }
+}
+
+/* =====================================================
+   SLOT MANAGEMENT LIST (ONLY BOOKING CONFIRMED)
+===================================================== */
+static async getSlotManagementList() {
+  try {
+
+    const appointments = await Appointment.findAll({
+      where: {
+        booking_status: 2   
+      },
+      attributes: [
+        "appointment_id",
+        "patient_id",
+        "doctor_id",
+        "doctor_availability_id",
+        "booking_date",
+        "booking_time",
+        "booking_status",
+        "appointment_no",
+        "booking_no",
+        "created_on"
+      ],
+      include: [
+        {
+          model: Patient,
+          as: "patient",
+          attributes: ["first_name", "middle_name", "last_name", "phone_no"]
+        },
+        {
+          model: Doctor,
+          as: "doctor",
+          attributes: ["first_name", "middle_name", "last_name"],
+          include: [
+            {
+              model: DoctorSpecialization,
+              as: "doctor_specializations",
+              attributes: ["specialization_id"],
+              include: [
+                {
+                  model: DomainLookup,
+                  as: "specializationLookup",
+                  attributes: ["domain_name"]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          model: DoctorAvailability,
+          as: "availability"
+        },
+        {
+          model: DomainLookup,
+          as: "statusLookup",
+          attributes: ["domain_name"],
+          where: { domain_type: "booking_status" }
+        }
+      ],
+      order: [["appointment_id", "DESC"]]
+    });
+
+    const formatted = appointments.map(item => ({
+        appointment_id: item.appointment_id,
+        appointment_no: item.appointment_no || null,
+        patient_id: item.patient_id,
+        doctor_id: item.doctor_id,
+
+        doctor_name: [
+          item.doctor?.first_name,
+          item.doctor?.middle_name,
+          item.doctor?.last_name
+        ].filter(Boolean).join(" "),
+
+        patient_name: [
+          item.patient?.first_name,
+          item.patient?.middle_name,
+          item.patient?.last_name
+        ].filter(Boolean).join(" "),
+
+        doctor_avatar: [
+          item.doctor?.first_name?.[0],
+          item.doctor?.last_name?.[0]
+        ].filter(Boolean).join(""),
+
+        patient_avatar: [
+          item.patient?.first_name?.[0],
+          item.patient?.last_name?.[0]
+        ].filter(Boolean).join(""),
+
+        doctor_phone: item.doctor?.phone_no || null,
+        patient_phone: item.patient?.phone_no || null,
+    
+
+        doctor_email: item.doctor?.email || null,
+        patient_email: item.patient?.email || null,
+
+
+        doctor_gender:
+          item.doctor?.doctor_detail?.genderLookup?.domain_name || null,
+
+        patient_gender:
+          item.patient?.patient_detail?.genderLookup?.domain_name || null,
+
+        patient_dob: item.patient?.patient_detail?.dob || null,
+
+        specialization:
+          item.doctor?.doctor_specializations?.[0]?.specializationLookup?.domain_name || null,
+
+        doctor_bio: item.doctor?.doctor_detail?.sort_desc || null,
+        license_number: item.doctor?.doctor_detail?.licence_number || null,
+        experience: item.doctor?.doctor_detail?.experience || null,
+
+        appointment_date: item.booking_date,
+        appointment_time: item.booking_time,
+        booking_no: item.booking_no,
+        booking_status: item.statusLookup?.domain_name || null,
+
+        booking_time: item.created_on
+          ? item.created_on.toISOString().split("T")[1].split(".")[0]
+          : null,
+
+        doc_slot: item.availability
+          ? `${formatTimeTo12Hour(item.availability.start_time)} - ${formatTimeTo12Hour(item.availability.end_time)}`
+          : null,
+
+          start_time: formatTimeTo12Hour(item.availability.start_time),
+          end_time: formatTimeTo12Hour(item.availability.end_time),
+
+        fees: item.availability?.fees || null,
+
+        created_on: item.created_on
+          ? item.created_on.toISOString().split("T")[0]
+          : null,
+
+        created_by: item.created_by,
+        updated_by: item.updated_by,
+        updated_on: item.updated_on
+      }));
+    return {
+      success: true,
+      message: "Slot management list fetched successfully",
       data: formatted
     };
 
@@ -1170,6 +1327,101 @@ static async assignAppointmentTime(payload) {
     await t.rollback();
 
     console.error("ASSIGN APPOINTMENT TIME ERROR:", error);
+
+    return {
+      success: false,
+      message: error.message
+    };
+  }
+}
+
+/* =====================================================
+   UPDATE CONSULTATION STATUS BY ADMIN
+   consultation_completed -> 5
+   consultation_missed    -> 9
+===================================================== */
+static async updateConsultationStatus(appointmentId, action, updatedBy) {
+  const t = await sequelize.transaction();
+
+  try {
+    if (!appointmentId || !action || !updatedBy) {
+      await t.rollback();
+      return {
+        success: false,
+        message: "appointmentId, action and updatedBy are required"
+      };
+    }
+
+    const appointment = await Appointment.findByPk(appointmentId, {
+      transaction: t
+    });
+
+    if (!appointment) {
+      await t.rollback();
+      return {
+        success: false,
+        message: "Appointment not found"
+      };
+    }
+
+    let statusName = "";
+
+    if (action.toLowerCase() === "consultation_completed") {
+      statusName = "Consultation Completed";
+    } else if (action.toLowerCase() === "consultation_missed") {
+      statusName = "Consultation Missed";
+    } else {
+      await t.rollback();
+      return {
+        success: false,
+        message:
+          "Invalid action. Allowed values are consultation_completed or consultation_missed"
+      };
+    }
+
+    /* FETCH STATUS FROM DOMAIN LOOKUP */
+    const consultationStatus = await DomainLookup.findOne({
+      where: {
+        domain_type: "booking_status",
+        domain_name: statusName
+      },
+      transaction: t
+    });
+
+    if (!consultationStatus) {
+      await t.rollback();
+      return {
+        success: false,
+        message: `${statusName} status not found in domain lookup`
+      };
+    }
+
+    await appointment.update(
+      {
+        booking_status: Number(consultationStatus.domain_value),
+        updated_by: updatedBy,
+        updated_on: new Date()
+      },
+      { transaction: t }
+    );
+
+    await t.commit();
+
+    return {
+      success: true,
+      message: `${statusName} updated successfully`,
+      data: {
+        appointment_id: appointment.appointment_id,
+        booking_status: appointment.booking_status,
+        booking_status_name: consultationStatus.domain_name,
+        updated_by: appointment.updated_by,
+        updated_on: appointment.updated_on
+      }
+    };
+  } catch (error) {
+    await t.rollback();
+
+    console.error("UPDATE CONSULTATION STATUS ERROR:", error);
 
     return {
       success: false,

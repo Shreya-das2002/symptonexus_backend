@@ -191,7 +191,42 @@ static getAllAppointments = asyncHandler(async (req, res) => {
     );
   }
 });
+/* =====================================================
+   SLOT MANAGEMENT LIST (ONLY BOOKING CONFIRMED)
+===================================================== */
+static getSlotManagementList = asyncHandler(async (req, res) => {
+  try {
 
+    const result = await AppointmentService.getSlotManagementList();
+
+    if (!result.success) {
+      return res.sendResponse(
+        res.STATUS.BUSINESS_ERROR,
+        result.message,
+        [],
+        "BUSINESS_ERROR",
+        false
+      );
+    }
+
+    return res.sendResponse(
+      res.STATUS.SUCCESS,
+      result.message,
+      result.data,
+      null,
+      true
+    );
+
+  } catch (error) {
+
+    return res.sendResponse(
+      res.STATUS.INTERNAL_SERVER_ERROR,
+      "Something went wrong",
+      {},
+      "SERVER_ERROR"
+    );
+  }
+});
   /* =====================================================
      GET PENDING APPOINTMENTS FOR STANDARD ADMIN
   ===================================================== */
@@ -553,6 +588,89 @@ static assignAppointmentTime = asyncHandler(async (req, res) => {
   } catch (error) {
 
     console.error("ASSIGN APPOINTMENT TIME CONTROLLER ERROR:", error);
+
+    return res.sendResponse(
+      res.STATUS.INTERNAL_SERVER_ERROR,
+      "Something went wrong. Please try again later.",
+      {},
+      "SERVER_ERROR"
+    );
+
+  }
+});
+
+/* =====================================================
+   UPDATE CONSULTATION STATUS (ADMIN ONLY)
+===================================================== */
+static updateConsultationStatus = asyncHandler(async (req, res) => {
+  try {
+
+    const { appointment_id, action } = req.body;
+
+    if (!appointment_id || !action) {
+      return res.sendResponse(
+        res.STATUS.BUSINESS_ERROR,
+        "appointment_id and action are required",
+        {},
+        "BUSINESS_ERROR",
+        false
+      );
+    }
+
+    /*  ONLY ADMIN ID */
+    const adminId =
+      req.user?.admin_id ||
+      req.user?.admin_user_id ||
+      req.user?.user_id ||
+      null;
+
+    if (!adminId) {
+      return res.sendResponse(
+        res.STATUS.BUSINESS_ERROR,
+        "Admin not authorized",
+        {},
+        "BUSINESS_ERROR",
+        false
+      );
+    }
+
+    /* CALL SERVICE */
+    const result = await AppointmentService.updateConsultationStatus(
+      Number(appointment_id),
+      action,
+      adminId   
+    );
+
+    if (!result || typeof result.success !== "boolean") {
+      return res.sendResponse(
+        res.STATUS.INTERNAL_SERVER_ERROR,
+        "Invalid server response",
+        {},
+        "INVALID_RESPONSE"
+      );
+    }
+
+    if (!result.success) {
+      return res.sendResponse(
+        res.STATUS.BUSINESS_ERROR,
+        result.message || "Failed to update consultation status",
+        {},
+        result.errorCode || "BUSINESS_ERROR",
+        false
+      );
+    }
+
+    return res.sendResponse(
+      res.STATUS.SUCCESS,
+      result.message || "Consultation status updated successfully",
+      result.data || {},
+      null,
+      true
+    );
+
+  } catch (error) {
+
+    console.error("UPDATE CONSULTATION STATUS CONTROLLER ERROR:", error);
 
     return res.sendResponse(
       res.STATUS.INTERNAL_SERVER_ERROR,
