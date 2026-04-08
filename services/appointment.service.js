@@ -36,20 +36,45 @@ class AppointmentService {
         patient_id,
         doctor_id,
         doctor_availability_id,
-        booking_date
+        booking_date,
+        description
       } = payload;
 
       /* VALIDATION */
-      if (!patient_id || !doctor_id || !doctor_availability_id || !booking_date) {
+      if (!patient_id || !doctor_id || !doctor_availability_id || !booking_date || !description || !description.trim()) {
 
         await t.rollback();
 
         return {
           success: false,
-          message: "patient_id, doctor_id, doctor_availability_id and booking_date are required"
+          message: "patient_id, doctor_id, doctor_availability_id and booking_date and description are required"
         };
 
       }
+
+                      if (!description || !description.trim()) {
+                  await t.rollback();
+                  return {
+                    success: false,
+                    message: "Please describe your symptoms"
+                  };
+                }
+
+                if (description.trim().length < 10) {
+                  await t.rollback();
+                  return {
+                    success: false,
+                    message: "Description must be at least 10 characters"
+                  };
+                }
+
+                if (description.trim().length > 350) {
+                  await t.rollback();
+                  return {
+                    success: false,
+                    message: "Description cannot exceed 350 characters"
+                  };
+                }
 
       /* CHECK SLOT EXISTS */
       const slot = await DoctorAvailability.findOne({
@@ -133,7 +158,7 @@ class AppointmentService {
         doctor_availability_id,
         booking_date,
         booking_time: null,
-        description: null,
+        description: description.trim(),
         document_id: null,
         booking_status: Number(bookingStatusLookup.domain_value),
         created_on: new Date(),
