@@ -682,6 +682,83 @@ static updateConsultationStatus = asyncHandler(async (req, res) => {
   }
 });
 
+/* =====================================================
+   GENERATE PRESCRIPTION
+===================================================== */
+static generatePrescription = asyncHandler(async (req, res) => {
+  try {
+
+    const { appointment_id, prescription } = req.body;
+
+    /* VALIDATION */
+    if (!appointment_id || !prescription) {
+      return res.sendResponse(
+        res.STATUS.BUSINESS_ERROR,
+        "appointment_id and prescription are required",
+        {},
+        "BUSINESS_ERROR",
+        false
+      );
+    }
+
+    /* UPDATED BY (same pattern you already use) */
+    const updatedBy =
+      req.user?.doctor_id ||
+      req.user?.admin_id ||
+      req.user?.user_id ||
+      req.body.updated_by ||
+      null;
+
+    /* CALL SERVICE */
+    const result = await AppointmentService.generatePrescription(
+      req.body,
+      updatedBy
+    );
+
+    /* RESPONSE VALIDATION */
+    if (!result || typeof result.success !== "boolean") {
+      return res.sendResponse(
+        res.STATUS.INTERNAL_SERVER_ERROR,
+        "Invalid server response",
+        {},
+        "INVALID_RESPONSE"
+      );
+    }
+
+    /* BUSINESS ERROR */
+    if (!result.success) {
+      return res.sendResponse(
+        res.STATUS.BUSINESS_ERROR,
+        result.message || "Failed to generate prescription",
+        {},
+        result.errorCode || "BUSINESS_ERROR",
+        false
+      );
+    }
+
+    /* SUCCESS */
+    return res.sendResponse(
+      res.STATUS.SUCCESS,
+      result.message || "Prescription generated successfully",
+      result.data || {},
+      null,
+      true
+    );
+
+  } catch (error) {
+
+    console.error("GENERATE PRESCRIPTION CONTROLLER ERROR:", error);
+
+    return res.sendResponse(
+      res.STATUS.INTERNAL_SERVER_ERROR,
+      "Something went wrong. Please try again later.",
+      {},
+      "SERVER_ERROR"
+    );
+
+  }
+});
+
 }
 
 module.exports = AppointmentController;

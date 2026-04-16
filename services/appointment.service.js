@@ -306,6 +306,7 @@ static async getAllAppointments(userId, roleId, doctorId, patientId) {
         "booking_date",
         "booking_time",
         "description",
+        "prescription",
         "document_id",
         "booking_status",
         "appointment_no",
@@ -559,6 +560,7 @@ static async getAllAppointments(userId, roleId, doctorId, patientId) {
         appointment_time: item.booking_time,
         booking_no: item.booking_no,
         booking_status: item.statusLookup?.domain_name || null,
+        prescription: item.prescription || null,
 
         booking_time: item.created_on
           ? item.created_on.toISOString().split("T")[1].split(".")[0]
@@ -1469,6 +1471,95 @@ static async updateConsultationStatus(appointmentId, action, updatedBy) {
     await t.rollback();
 
     console.error("UPDATE CONSULTATION STATUS ERROR:", error);
+
+    return {
+      success: false,
+      message: error.message
+    };
+  }
+}
+
+/* =====================================================
+   GENERATE PRESCRIPTION
+   booking_status -> Prescription Generated (6)
+===================================================== */
+static async generatePrescription(payload, updatedBy) {
+  const t = await sequelize.transaction();
+
+  try {
+    const { appointment_id, prescription } = payload;
+
+    if (!appointment_id || !prescription || !String(prescription).trim()) {
+      await t.rollback();
+      return {
+        success: false,
+        message: "appointment_id and prescription are required"
+      };
+    }
+
+    const appointment = await Appointment.findByPk(appointment_id, {
+      transaction: t
+    });
+
+    if (!appointment) {
+      await t.rollback();
+      return {
+        success: false,
+        message: "Appointment not found"
+      };
+    }
+
+    const prescriptionGeneratedStatus = await DomainLookup.findOne({
+      where: {
+        domain_type: "booking_status",
+        domain_name: "Prescription Generated"
+      },
+      transaction: t
+    });
+
+    const bookingStatusValue = prescriptionGeneratedStatus
+      ? Number(prescriptionGeneratedStatus.domain_value)
+      : 6;
+
+    const bookingStatusName = prescriptionGeneratedStatus
+      ? prescriptionGeneratedStatus.domain_name
+      : "Prescription Generated";
+
+    const now = new Date();
+    const prescriptionHtml = String(prescription).trim();
+
+    await appointment.update(
+      {
+        prescription: prescriptionHtml,
+        booking_status: bookingStatusValue,
+        updated_by: updatedBy,
+        updated_on: now
+      },
+      { transaction: t }
+    );
+
+    const responseData = {
+      appointment_id: appointment.appointment_id,
+      prescription: prescriptionHtml,
+      booking_status: bookingStatusValue,
+      booking_status_name: bookingStatusName,
+      updated_by: updatedBy,
+      updated_on: now
+    };
+
+    await t.commit();
+
+    return {
+      success: true,
+      message: "Prescription generated successfully",
+      data: responseData
+    };
+  } catch (error) {
+    if (t && !t.finished) {
+      await t.rollback();
+    }
+
+    console.error("GENERATE PRESCRIPTION ERROR:", error);
 
     return {
       success: false,

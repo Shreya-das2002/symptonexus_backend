@@ -12,5 +12,6 @@ router.put("/update-status", authMiddleware, AppointmentController.updateAppoint
 router.put("/cancel-appointment", authMiddleware, AppointmentController.cancelAppointment);
 router.put("/assign-appointment-time", authMiddleware, AppointmentController.assignAppointmentTime);
 router.put("/update-consultation-status", authMiddleware, AppointmentController.updateConsultationStatus);
+router.post("/generate-prescription",authMiddleware, AppointmentController.generatePrescription);
 
 module.exports = router;

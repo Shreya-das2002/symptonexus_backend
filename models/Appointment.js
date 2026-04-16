@@ -40,6 +40,11 @@ const Appointment = sequelize.define("appointment", {
     allowNull: true
   },
 
+  prescription: {
+  type: DataTypes.TEXT,
+  allowNull: true,
+},
+
   description: {
     type: DataTypes.STRING(500)
   },
