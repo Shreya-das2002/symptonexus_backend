@@ -340,7 +340,14 @@ static async getAllAppointments(userId, roleId, doctorId, patientId) {
                   attributes: ["domain_name"],
                   where: { domain_type: "gender" },
                   required: false
-                }
+                },
+                {
+                  model: DomainLookup,
+                  as: "BloodGroup",
+                  attributes: ["domain_name"],
+                  where: { domain_type: "blood_group" },
+                  required: false
+                },
               ]
             }
           ]
@@ -357,7 +364,7 @@ static async getAllAppointments(userId, roleId, doctorId, patientId) {
             "phone_no"
           ],
           required: true,
-           where: Object.keys(doctorWhereCondition).length ? doctorWhereCondition : undefined,
+            where: Object.keys(doctorWhereCondition).length ? doctorWhereCondition : undefined,
           include: [
             {
               model: DoctorDetails,
@@ -526,11 +533,26 @@ static async getAllAppointments(userId, roleId, doctorId, patientId) {
 
         patient_dob: item.patient?.patient_detail?.dob || null,
 
+        patient_blood_group: item.patient?.patient_detail?.BloodGroup?.domain_name || null,
+
+        patient_height: item.patient?.patient_detail?.height || null,
+
+        patient_weight: item.patient?.patient_detail?.weight || null,
+
+        patient_occupation: item.patient?.patient_detail?.occupation || null,
+
+        patient_allergies: item.patient?.patient_detail?.allergies || null,
+
+        patient_smooking: item.patient?.patient_detail?.smoking || null,
+
+        patient_alcohol: item.patient?.patient_detail?.alcohol || null,
+
         specialization:
           item.doctor?.doctor_specializations?.[0]?.specializationLookup?.domain_name || null,
 
         doctor_bio: item.doctor?.doctor_detail?.sort_desc || null,
         license_number: item.doctor?.doctor_detail?.licence_number || null,
+        reg_no: item.doctor?.doctor_detail?.registration_number || null,
         experience: item.doctor?.doctor_detail?.experience || null,
 
         appointment_date: item.booking_date,
