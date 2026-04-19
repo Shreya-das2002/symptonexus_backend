@@ -133,6 +133,7 @@ class AcknowledgementPdfService {
             });
 
         const logoSrc = `data:image/png;base64,${logoBase64}`;
+        
 
         const watermarkPath = path.join(process.cwd(), "assets", "watermark.png");
 

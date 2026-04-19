@@ -10,7 +10,7 @@ const dashboardRoutes = require("./homepageCount.routes");
 const accountRoutes = require("./accountDelete.routes");
 const appointmentRoutes = require("./appointment.routes");
 const acknowledgementPdfRoutes = require("./acknowledgementPdf.routes");
-
+const prescriptionPdfRoutes = require("./prescriptionPdf.routes");
 
 module.exports = (app) => {
   app.use("/api/auth", AuthRoutes);
@@ -25,4 +25,5 @@ module.exports = (app) => {
   app.use("/api/account", accountRoutes);
   app.use("/api/appointment", appointmentRoutes);
   app.use("/api", acknowledgementPdfRoutes);
+  app.use("/api", prescriptionPdfRoutes);
 };
