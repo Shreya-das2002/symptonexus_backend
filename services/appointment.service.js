@@ -77,29 +77,49 @@ class AppointmentService {
                 }
 
       /* CHECK SLOT EXISTS */
-      const slot = await DoctorAvailability.findOne({
 
-        where: {
-          doctor_availability_id,
-          doctor_id,
-          date: booking_date
-        },
+  const slot = await DoctorAvailability.findOne({
+    where: {
+      doctor_availability_id,
+      doctor_id,
+      date: booking_date
+    },
+    transaction: t,
+    lock: t.LOCK.UPDATE
+  });
 
-        transaction: t
+  if (!slot) {
+    throw new Error("Selected doctor availability not found");
+  }
 
-      });
+  const existingAppointment = await Appointment.findOne({
+    where: {
+      patient_id,
+      doctor_id,
+      doctor_availability_id,
+      booking_date
+    },
+    transaction: t
+  });
 
-      if (!slot) {
+  if (existingAppointment) {
+    throw new Error("Appointment already booked for this date");
+  }
 
-        await t.rollback();
+  const totalBooked = await Appointment.count({
+    where: {
+      doctor_availability_id,
+      doctor_id,
+      booking_date
+    },
+    transaction: t
+  });
 
-        return {
-          success: false,
-          message: "Selected doctor availability not found"
-        };
+  const slotCount = Number(slot.slot_count || 0);
 
-      }
-
+  if (totalBooked >= slotCount) {
+    throw new Error("No slot available for selected date");
+  }
       /* BOOKING STATUS CHECK */
       const bookingStatusLookup = await DomainLookup.findOne({
 
@@ -122,32 +142,6 @@ class AppointmentService {
         };
 
       }
-
-      /* DUPLICATE CHECK */
-      const existingAppointment = await Appointment.findOne({
-
-        where: {
-          patient_id,
-          doctor_id,
-          doctor_availability_id,
-          booking_date
-        },
-
-        transaction: t
-
-      });
-
-      if (existingAppointment) {
-
-        await t.rollback();
-
-        return {
-          success: false,
-          message: "Appointment already booked for this date"
-        };
-
-      }
-
         
 
       /* CREATE APPOINTMENT */
@@ -561,6 +555,7 @@ static async getAllAppointments(userId, roleId, doctorId, patientId) {
         booking_no: item.booking_no,
         booking_status: item.statusLookup?.domain_name || null,
         prescription: item.prescription || null,
+        description: item.description || null,
 
         booking_time: item.created_on
           ? item.created_on.toISOString().split("T")[1].split(".")[0]

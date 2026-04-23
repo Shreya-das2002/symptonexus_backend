@@ -1,47 +1,62 @@
 require("dotenv").config();
-const express = require('express');
+const express = require("express");
 const cors = require("cors");
-const app = express();
-const responseMiddleware = require("./middlewares/response.middleware");
-const authMiddleware = require("./middlewares/auth.middleware");
 
-const { sequelize, Patient, PatientDetails } = require("./models");
+const app = express();
+
+const responseMiddleware = require("./middlewares/response.middleware");
+const { connectAppointmentProducer } = require("./kafka/producer/appointment.producer");
+const { runAppointmentConsumer } = require("./kafka/Consumer/appointment.consumer");
+const { sequelize } = require("./models");
 
 require("./models/User");
 require("./models/Admin_user");
 require("./models/Doctor");
 
-sequelize.authenticate()
-  .then(() => console.log("DB Connected"))
-  .catch(err => console.error("DB Error:", err));
-  
 app.use(cors({
-  origin: "http://localhost:3000", // frontend origin
+  origin: "http://localhost:3000",
   credentials: true,
   allowedHeaders: ["Content-Type", "Authorization"],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 }));
 
 app.use(express.json());
-app.use(responseMiddleware); 
 app.use(express.urlencoded({ extended: true }));
+app.use(responseMiddleware);
 
-
-const registerRoutes = require('./routes/index.routes');
+const registerRoutes = require("./routes/index.routes");
 registerRoutes(app);
 
-sequelize.sync()
-  .then(() => {
-    console.log("Database synced")
-      })
+const PORT = process.env.PORT || 4000;
 
-const PORT = 4000;
+const startServer = async () => {
+  try {
+    await sequelize.authenticate();
+    console.log("DB Connected");
 
-//  IMPORTANT FIX
-const server = app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+    await sequelize.sync();
+    console.log("Database synced");
 
-// Prevent socket delays on Windows
-server.keepAliveTimeout = 0;
-server.headersTimeout = 0;
+    try {
+      await connectAppointmentProducer();
+      await runAppointmentConsumer();
+      console.log("Kafka connected successfully");
+    } catch (kafkaError) {
+      console.error("Kafka startup failed:", kafkaError.message);
+      console.log("Server will continue without Kafka");
+    }
+
+    const server = app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+
+    server.keepAliveTimeout = 0;
+    server.headersTimeout = 0;
+
+  } catch (error) {
+    console.error("Server Start Error:", error);
+    process.exit(1);
+  }
+};
+
+startServer();

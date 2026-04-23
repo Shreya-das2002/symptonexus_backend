@@ -1,60 +1,131 @@
-const AppointmentService = require("../services/appointment.service");
 const asyncHandler = require("../utils/asyncHandler");
+const { v4: uuidv4 } = require("uuid");
+const AppointmentService = require("../services/appointment.service");
+const { sendAppointmentBookingEvent } = require("../kafka/producer/appointment.producer");
 
 class AppointmentController {
 
   /* =====================================================
-     CREATE APPOINTMENT
+     CREATE APPOINTMENT - KAFKA FLOW
   ===================================================== */
-  static createAppointment = asyncHandler(async (req, res) => {
-    try {
+static createAppointment = asyncHandler(async (req, res) => {
+  try {
+    const payload = req.body;
+    const createdBy = req.user?.user_id || null;
 
-      const payload = req.body;
+    const {
+      patient_id,
+      doctor_id,
+      doctor_availability_id,
+      booking_date,
+      description
+    } = payload;
 
-      const createdBy = req.user?.user_id || null;
-
-      const result = await AppointmentService.createAppointment(payload, createdBy);
-
-      if (!result || typeof result.success !== "boolean") {
-        return res.sendResponse(
-          res.STATUS.INTERNAL_SERVER_ERROR,
-          "Invalid server response",
-          {},
-          "INVALID_RESPONSE"
-        );
-      }
-
-      if (!result.success) {
-        return res.sendResponse(
-          res.STATUS.BUSINESS_ERROR,
-          result.message || "Failed to create appointment",
-          {},
-          result.errorCode || "BUSINESS_ERROR",
-          false
-        );
-      }
-
+    if (
+      !patient_id ||
+      !doctor_id ||
+      !doctor_availability_id ||
+      !booking_date ||
+      !description ||
+      !String(description).trim()
+    ) {
       return res.sendResponse(
-        res.STATUS.SUCCESS,
-        result.message || "Appointment booked successfully",
-        result.data || {},
-        null,
-        true
+        res.STATUS.BUSINESS_ERROR,
+        "patient_id, doctor_id, doctor_availability_id, booking_date and description are required",
+        {},
+        "BUSINESS_ERROR",
+        false
       );
+    }
 
-    } catch (error) {
+    const requestId = uuidv4();
 
-      console.error("CREATE APPOINTMENT CONTROLLER ERROR:", error);
+    const servicePayload = {
+      request_id: requestId,
+      created_by: createdBy,
+      patient_id: Number(patient_id),
+      doctor_id: Number(doctor_id),
+      doctor_availability_id: Number(doctor_availability_id),
+      booking_date,
+      description: String(description).trim()
+    };
 
+    // 1. Create appointment in DB
+    const result = await AppointmentService.createAppointment(
+      servicePayload,
+      createdBy
+    );
+
+    if (!result || typeof result.success !== "boolean") {
       return res.sendResponse(
         res.STATUS.INTERNAL_SERVER_ERROR,
-        "Something went wrong. Please try again later.",
+        "Invalid server response",
         {},
-        "SERVER_ERROR"
+        "INVALID_RESPONSE",
+        false
       );
-
     }
-  });
+
+    if (!result.success) {
+      return res.sendResponse(
+        res.STATUS.BUSINESS_ERROR,
+        result.message || "Failed to create appointment",
+        {},
+        result.errorCode || "BUSINESS_ERROR",
+        false
+      );
+    }
+
+    // 2. Publish Kafka event after DB success
+    try {
+      const kafkaKey = `${doctor_availability_id}:${booking_date}`;
+
+      const kafkaPayload = {
+        request_id: requestId,
+        event_name: "APPOINTMENT_CREATED",
+        appointment_id: result.data.appointment_id,
+        booking_no: result.data.booking_no,
+        patient_id: result.data.patient_id,
+        doctor_id: result.data.doctor_id,
+        doctor_availability_id: result.data.doctor_availability_id,
+        booking_date: result.data.booking_date,
+        booking_time: result.data.booking_time,
+        description: result.data.description,
+        booking_status: result.data.booking_status,
+        created_by: result.data.created_by,
+        created_on: result.data.created_on
+      };
+
+      await sendAppointmentBookingEvent(kafkaKey, kafkaPayload);
+    } catch (kafkaError) {
+      console.error("CREATE APPOINTMENT KAFKA ERROR:", kafkaError);
+      // booking already saved, so do not fail API response
+    }
+
+    // 3. Return request_id + service data
+    return res.sendResponse(
+      res.STATUS.SUCCESS,
+      result.message || "Appointment booked successfully",
+      {
+        request_id: requestId,
+        ...result.data
+      },
+      null,
+      true
+    );
+
+  } catch (error) {
+    console.error("CREATE APPOINTMENT CONTROLLER ERROR:", error);
+
+    return res.sendResponse(
+      res.STATUS.INTERNAL_SERVER_ERROR,
+      "Something went wrong. Please try again later.",
+      {},
+      "SERVER_ERROR",
+      false
+    );
+  }
+});
 
   /* =====================================================
    GET ALL APPOINTMENTS
