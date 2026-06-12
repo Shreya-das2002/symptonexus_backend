@@ -30,6 +30,24 @@ const ControlRoleMapping = require("./Control_role_mapping");
 
 const UserRoleMapping = require("./User_role_mapping");
 
+const Chat = require("./Chat");
+
+/* =====================================================
+   CHAT → USER RELATION
+===================================================== */
+
+// One user can have many chats
+User.hasMany(Chat, {
+  foreignKey: "user_id",
+  as: "chats"
+});
+
+// Each chat belongs to one user
+Chat.belongsTo(User, {
+  foreignKey: "user_id",
+  as: "user"
+});
+
 /* =====================================================
       Appointment
 ===================================================== */
@@ -404,5 +422,7 @@ module.exports = {
 
   Appointment,
 
-  DoctorAvailability
+  DoctorAvailability,
+
+  Chat
 };

@@ -11,6 +11,7 @@ const accountRoutes = require("./accountDelete.routes");
 const appointmentRoutes = require("./appointment.routes");
 const acknowledgementPdfRoutes = require("./acknowledgementPdf.routes");
 const prescriptionPdfRoutes = require("./prescriptionPdf.routes");
+const chatRoutes = require("./chat.routes");
 
 module.exports = (app) => {
   app.use("/api/auth", AuthRoutes);
@@ -26,4 +27,5 @@ module.exports = (app) => {
   app.use("/api/appointment", appointmentRoutes);
   app.use("/api", acknowledgementPdfRoutes);
   app.use("/api", prescriptionPdfRoutes);
+  app.use("/api/chat", chatRoutes);
 };
