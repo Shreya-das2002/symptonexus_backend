@@ -64,10 +64,6 @@ const Feedback = sequelize.define('feedback', {
     allowNull: false,
   },
 
-    ai_accuracy: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-  },
 
   // Doctor 
 
