@@ -2,21 +2,16 @@ const { DataTypes } = require('sequelize');
 
 const sequelize = require('../config/database');
 
-const Feedback = sequelize.define('feedback', {
-    feedback_id: {
+const PatientFeedback = sequelize.define('patient_feedback', {
+    patient_feedback_id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true,
   },
 
-  doctor_id: {
-    type: DataTypes.INTEGER,
-    allowNull: true,
-  },
-
   patient_id: {
     type: DataTypes.INTEGER,
-    allowNull: true,
+    allowNull: false,
   },
 
   appointment_id: {
@@ -31,7 +26,7 @@ const Feedback = sequelize.define('feedback', {
 
     booking: {
     type: DataTypes.INTEGER,
-    allowNull: false,
+    allowNull: true,
   },
 
     doc_communication: {
@@ -54,6 +49,11 @@ const Feedback = sequelize.define('feedback', {
     allowNull: false,
   },
 
+    staff: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+  },  
+
     ai_accuracy: {
     type: DataTypes.INTEGER,
     allowNull: false,
@@ -74,47 +74,14 @@ const Feedback = sequelize.define('feedback', {
     allowNull: true,
   },
 
-
-  // Doctor 
-
-    management: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-  },
-
-    p_info: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-  },
-
-    user_experience: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-  },
-
-    system_performance: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-  },
-
-    support_service: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-  },
-
-    p_cooperation: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-  },
-
     desc: {
     type: DataTypes.STRING,
     allowNull: true,
   },
   
 }, {
-  tableName: 'feedbacks',
+  tableName: 'patient_feedbacks',
   timestamps: false
 });
 
-module.exports = Feedback;
+module.exports = PatientFeedback;
