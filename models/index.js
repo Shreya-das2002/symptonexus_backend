@@ -32,6 +32,45 @@ const UserRoleMapping = require("./User_role_mapping");
 
 const Chat = require("./Chat");
 
+const Feedback = require("./Feedback");
+
+/* =====================================================
+   FEEDBACK RELATIONS
+===================================================== */
+
+/* DOCTOR → FEEDBACK */
+Doctor.hasMany(Feedback, {
+  foreignKey: "doctor_id",
+  as: "feedbacks"
+});
+
+Feedback.belongsTo(Doctor, {
+  foreignKey: "doctor_id",
+  as: "doctor"
+});
+
+/* PATIENT → FEEDBACK */
+Patient.hasMany(Feedback, {
+  foreignKey: "patient_id",
+  as: "feedbacks"
+});
+
+Feedback.belongsTo(Patient, {
+  foreignKey: "patient_id",
+  as: "patient"
+});
+
+/* APPOINTMENT → FEEDBACK */
+Appointment.hasOne(Feedback, {
+  foreignKey: "appointment_id",
+  as: "feedback"
+});
+
+Feedback.belongsTo(Appointment, {
+  foreignKey: "appointment_id",
+  as: "appointment"
+});
+
 /* =====================================================
    CHAT → USER RELATION
 ===================================================== */
@@ -424,5 +463,7 @@ module.exports = {
 
   DoctorAvailability,
 
-  Chat
+  Chat,
+
+  Feedback
 };

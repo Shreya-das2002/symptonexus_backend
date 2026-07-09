@@ -11,10 +11,15 @@ const Feedback = sequelize.define('feedback', {
 
   doctor_id: {
     type: DataTypes.INTEGER,
-    allowNull: false,
+    allowNull: true,
   },
 
   patient_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
+
+  appointment_id: {
     type: DataTypes.INTEGER,
     allowNull: true,
   },
@@ -62,6 +67,11 @@ const Feedback = sequelize.define('feedback', {
     recommendation: {
     type: DataTypes.BOOLEAN,
     allowNull: false,
+  },
+
+  consultation: {
+    type: DataTypes.BOOLEAN,
+    allowNull: true,
   },
 
 
