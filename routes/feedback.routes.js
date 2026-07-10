@@ -8,7 +8,9 @@ const authMiddleware = require("../middlewares/auth.middleware");
 
 /* ================= CREATE PATIENT FEEDBACK ================= */
 
-router.post("/create", authMiddleware, FeedbackController.createPatientFeedback);
+router.post("/patient", authMiddleware, FeedbackController.createPatientFeedback);
+
+/* ================= CREATE DOCTOR FEEDBACK ================= */
 
 
 module.exports = router;

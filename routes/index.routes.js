@@ -29,5 +29,5 @@ module.exports = (app) => {
   app.use("/api", acknowledgementPdfRoutes);
   app.use("/api", prescriptionPdfRoutes);
   app.use("/api/chat", chatRoutes);
-  app.use("/api/patient-feedback", FeedbackRoutes);
+  app.use("/api/feedback", FeedbackRoutes);
 };
