@@ -68,7 +68,7 @@ class FeedbackController {
 
 
       const result =
-        await PatientFeedbackService.createPatientFeedback(
+        await FeedbackService.createPatientFeedback(
           payload
         );
 
