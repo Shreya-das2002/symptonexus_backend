@@ -13,7 +13,8 @@ require("./models/User");
 require("./models/Admin_user");
 require("./models/Doctor");
 require("./models/Chat");
-require("./models/Feedback");
+require("./models/Patient_Feedback");
+require("./models/Doctor_Feedback.js");
 
 app.use(cors({
   origin: "http://localhost:3000",

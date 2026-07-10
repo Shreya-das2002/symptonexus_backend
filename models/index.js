@@ -32,43 +32,50 @@ const UserRoleMapping = require("./User_role_mapping");
 
 const Chat = require("./Chat");
 
-const Feedback = require("./Feedback");
+const PatientFeedback = require("./Patient_Feedback");
+
+const DoctorFeedback = require("./Doctor_Feedback");
 
 /* =====================================================
    FEEDBACK RELATIONS
 ===================================================== */
 
-/* DOCTOR → FEEDBACK */
-Doctor.hasMany(Feedback, {
-  foreignKey: "doctor_id",
-  as: "feedbacks"
-});
+/* PATIENT → PATIENT FEEDBACK */
 
-Feedback.belongsTo(Doctor, {
-  foreignKey: "doctor_id",
-  as: "doctor"
-});
-
-/* PATIENT → FEEDBACK */
-Patient.hasMany(Feedback, {
+Patient.hasMany(PatientFeedback, {
   foreignKey: "patient_id",
-  as: "feedbacks"
+  as: "patient_feedbacks"
 });
 
-Feedback.belongsTo(Patient, {
+PatientFeedback.belongsTo(Patient, {
   foreignKey: "patient_id",
   as: "patient"
 });
 
-/* APPOINTMENT → FEEDBACK */
-Appointment.hasOne(Feedback, {
+
+/* APPOINTMENT → PATIENT FEEDBACK */
+
+Appointment.hasOne(PatientFeedback, {
   foreignKey: "appointment_id",
-  as: "feedback"
+  as: "patient_feedback"
 });
 
-Feedback.belongsTo(Appointment, {
+PatientFeedback.belongsTo(Appointment, {
   foreignKey: "appointment_id",
   as: "appointment"
+});
+
+
+/* DOCTOR → DOCTOR FEEDBACK */
+
+Doctor.hasMany(DoctorFeedback, {
+  foreignKey: "doctor_id",
+  as: "doctor_feedbacks"
+});
+
+DoctorFeedback.belongsTo(Doctor, {
+  foreignKey: "doctor_id",
+  as: "doctor"
 });
 
 /* =====================================================
@@ -465,5 +472,7 @@ module.exports = {
 
   Chat,
 
-  Feedback
+  PatientFeedback,
+
+  DoctorFeedback
 };
