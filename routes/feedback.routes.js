@@ -12,5 +12,6 @@ router.post("/patient", authMiddleware, FeedbackController.createPatientFeedback
 
 /* ================= CREATE DOCTOR FEEDBACK ================= */
 
+router.post("/doctor", authMiddleware, FeedbackController.createDoctorFeedback);
 
 module.exports = router;

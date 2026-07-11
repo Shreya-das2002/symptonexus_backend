@@ -1,4 +1,6 @@
 const PatientFeedback = require("../models/Patient_Feedback");
+const DoctorFeedback = require("../models/Doctor_Feedback");
+const Doctor = require("../models/doctor");
 const Patient = require("../models/patient");
 const Appointment = require("../models/Appointment");
 
@@ -516,13 +518,303 @@ class FeedbackService {
 
   }
 
+  /* =====================================================
+      CREATE DOCTOR FEEDBACK
+  ===================================================== */
 
-        /* =====================================================
-            CREATE DOCTOR FEEDBACK
-        ===================================================== */
+  static async createDoctorFeedback(payload) {
+
+    try {
+
+      const {
+        doctor_id,
+
+        overallRating,
+        experience,
+
+        areaRatings = {},
+
+        website,
+        management,
+        p_info,
+        system_performance,
+        support_service,
+        p_cooperation,
+        staff,
+
+        recommend,
+        recommendation,
+
+        desc
+      } = payload;
+
+
+      /* =====================================================
+          CONVERT BOOLEAN VALUES
+      ===================================================== */
+
+      const parseBoolean = (value) => {
+
+        if (
+          value === true ||
+          value === 1 ||
+          value === "1" ||
+          String(value).toLowerCase() === "true" ||
+          String(value).toLowerCase() === "yes"
+        ) {
+          return true;
+        }
+
+        if (
+          value === false ||
+          value === 0 ||
+          value === "0" ||
+          String(value).toLowerCase() === "false" ||
+          String(value).toLowerCase() === "no"
+        ) {
+          return false;
+        }
+
+        return null;
+      };
+
+
+      /* =====================================================
+          CONVERT RATING VALUES
+      ===================================================== */
+
+      const parseRating = (value) => {
+
+        if (
+          value === undefined ||
+          value === null ||
+          value === ""
+        ) {
+          return null;
+        }
+
+        const rating = Number(value);
+
+        if (!Number.isInteger(rating)) {
+          return null;
+        }
+
+        return rating;
+      };
+
+
+      const isValidRating = (rating) => {
+
+        return (
+          Number.isInteger(rating) &&
+          rating >= 1 &&
+          rating <= 5
+        );
+
+      };
+
+
+      const recommendationValue = parseBoolean(
+        recommendation !== undefined
+          ? recommendation
+          : recommend
+      );
+
+
+      /* =====================================================
+          PREPARE FEEDBACK DATA
+      ===================================================== */
+
+      const feedbackData = {
+
+        doctor_id: Number(doctor_id),
+
+        experience: parseRating(
+          experience !== undefined
+            ? experience
+            : overallRating
+        ),
+
+        website: parseRating(
+          website !== undefined
+            ? website
+            : areaRatings["Website Design & UI"]
+        ),
+
+        management: parseRating(
+          management !== undefined
+            ? management
+            : areaRatings["Appointment Management"]
+        ),
+
+        p_info: parseRating(
+          p_info !== undefined
+            ? p_info
+            : areaRatings["Patient Information"]
+        ),
+
+        system_performance: parseRating(
+          system_performance !== undefined
+            ? system_performance
+            : areaRatings["System Performance"]
+        ),
+
+        support_service: parseRating(
+          support_service !== undefined
+            ? support_service
+            : areaRatings["Support Service"]
+        ),
+
+        p_cooperation: parseRating(
+          p_cooperation !== undefined
+            ? p_cooperation
+            : areaRatings["Patient Cooperation"]
+        ),
+
+        staff: parseRating(
+          staff !== undefined
+            ? staff
+            : areaRatings["Staff Behaviour"]
+        ),
+
+        recommendation: recommendationValue,
+
+        desc
+
+      };
+
+
+      /* =====================================================
+          VALIDATE RATINGS
+      ===================================================== */
+
+      const ratingFields = [
+        "experience",
+        "website",
+        "management",
+        "p_info",
+        "system_performance",
+        "support_service",
+        "p_cooperation",
+        "staff"
+      ];
+
+      for (const field of ratingFields) {
+
+        if (!isValidRating(feedbackData[field])) {
+
+          return {
+            success: false,
+            message: `${field} must be an integer between 1 and 5`,
+            statusCode: 400
+          };
+
+        }
+
+      }
+
+
+      /* =====================================================
+          CHECK DOCTOR
+      ===================================================== */
+
+      const doctor = await Doctor.findByPk(
+        feedbackData.doctor_id
+      );
+
+      if (!doctor) {
+
+        return {
+          success: false,
+          message: "Doctor not found",
+          statusCode: 404
+        };
+
+      }
+
+
+      /* =====================================================
+          CREATE FEEDBACK
+      ===================================================== */
+
+      const feedback = await DoctorFeedback.create(
+        feedbackData
+      );
+
+
+      return {
+
+        success: true,
+
+        message: "Doctor feedback submitted successfully",
+
+        data: {
+
+          doctor_feedback_id:
+            feedback.doctor_feedback_id,
+
+          doctor_id:
+            feedback.doctor_id,
+
+          experience:
+            feedback.experience,
+
+          website:
+            feedback.website,
+
+          management:
+            feedback.management,
+
+          p_info:
+            feedback.p_info,
+
+          system_performance:
+            feedback.system_performance,
+
+          support_service:
+            feedback.support_service,
+
+          p_cooperation:
+            feedback.p_cooperation,
+
+          staff:
+            feedback.staff,
+
+          recommendation:
+            feedback.recommendation,
+
+          desc:
+            feedback.desc
+
+        }
+
+      };
+
+    }
+
+    catch (error) {
+
+      console.error(
+        "CREATE DOCTOR FEEDBACK ERROR:",
+        error
+      );
+
+
+      return {
+
+        success: false,
+
+        message: error.message,
+
+        statusCode: 500
+
+      };
+
+    }
+
+  }
 
         
-
 }
 
 
