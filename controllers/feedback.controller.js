@@ -278,6 +278,109 @@ class FeedbackController {
 
   });
 
+    /* ================= GET ALL PATIENT FEEDBACKS ================= */
+
+  static getAllPatientFeedbacks = asyncHandler(async (req, res) => {
+    try {
+      const result = await FeedbackService.getAllPatientFeedbacks();
+
+      /* DEFENSIVE RESPONSE CHECK */
+
+      if (!result || typeof result.success !== "boolean") {
+        return res.sendResponse(
+          res.STATUS.INTERNAL_SERVER_ERROR,
+          "Invalid server response",
+          {},
+          "INVALID_RESPONSE",
+          false
+        );
+      }
+
+      /* BUSINESS ERROR */
+
+      if (!result.success) {
+        return res.sendResponse(
+          res.STATUS.BUSINESS_ERROR,
+          result.message || "Failed to fetch patient feedback list",
+          {},
+          result.errorCode || "BUSINESS_ERROR",
+          false
+        );
+      }
+
+      /* SUCCESS */
+
+      return res.sendResponse(
+        res.STATUS.SUCCESS,
+        result.message || "Patient feedback list fetched successfully",
+        result.data || [],
+        null,
+        true
+      );
+    } catch (error) {
+      console.error("GET ALL PATIENT FEEDBACKS CONTROLLER ERROR:", error);
+
+      return res.sendResponse(
+        res.STATUS.INTERNAL_SERVER_ERROR,
+        "Something went wrong. Please try again later.",
+        {},
+        "SERVER_ERROR",
+        false
+      );
+    }
+  });
+
+  /* ================= GET ALL DOCTOR FEEDBACKS ================= */
+
+  static getAllDoctorFeedbacks = asyncHandler(async (req, res) => {
+    try {
+      const result = await FeedbackService.getAllDoctorFeedbacks();
+
+      /* DEFENSIVE RESPONSE CHECK */
+
+      if (!result || typeof result.success !== "boolean") {
+        return res.sendResponse(
+          res.STATUS.INTERNAL_SERVER_ERROR,
+          "Invalid server response",
+          {},
+          "INVALID_RESPONSE",
+          false
+        );
+      }
+
+      /* BUSINESS ERROR */
+
+      if (!result.success) {
+        return res.sendResponse(
+          res.STATUS.BUSINESS_ERROR,
+          result.message || "Failed to fetch doctor feedback list",
+          {},
+          result.errorCode || "BUSINESS_ERROR",
+          false
+        );
+      }
+
+      /* SUCCESS */
+
+      return res.sendResponse(
+        res.STATUS.SUCCESS,
+        result.message || "Doctor feedback list fetched successfully",
+        result.data || [],
+        null,
+        true
+      );
+    } catch (error) {
+      console.error("GET ALL DOCTOR FEEDBACKS CONTROLLER ERROR:", error);
+
+      return res.sendResponse(
+        res.STATUS.INTERNAL_SERVER_ERROR,
+        "Something went wrong. Please try again later.",
+        {},
+        "SERVER_ERROR",
+        false
+      );
+    }
+  });
 }
 
 

@@ -813,7 +813,60 @@ class FeedbackService {
     }
 
   }
+  
+/* =====================================================
+    GET ALL PATIENT FEEDBACKS
+===================================================== */
 
+static async getAllPatientFeedbacks() {
+  try {
+    const feedbacks = await PatientFeedback.findAll({
+      order: [["patient_feedback_id", "DESC"]],
+      raw: true,
+    });
+
+    return {
+      success: true,
+      message: "Patient feedback list fetched successfully",
+      data: feedbacks,
+    };
+  } catch (error) {
+    console.error("GET ALL PATIENT FEEDBACKS ERROR:", error);
+
+    return {
+      success: false,
+      message: error.message,
+      statusCode: 500,
+    };
+  }
+}
+
+/* =====================================================
+    GET ALL DOCTOR FEEDBACKS
+===================================================== */
+
+static async getAllDoctorFeedbacks() {
+  try {
+    const feedbacks = await DoctorFeedback.findAll({
+      order: [["doctor_feedback_id", "DESC"]],
+      raw: true,
+    });
+
+    return {
+      success: true,
+      message: "Doctor feedback list fetched successfully",
+      data: feedbacks,
+    };
+  } catch (error) {
+    console.error("GET ALL DOCTOR FEEDBACKS ERROR:", error);
+
+    return {
+      success: false,
+      message: error.message,
+      statusCode: 500,
+    };
+  }
+}
         
 }
 
