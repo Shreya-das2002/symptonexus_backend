@@ -13,6 +13,7 @@ const acknowledgementPdfRoutes = require("./acknowledgementPdf.routes");
 const prescriptionPdfRoutes = require("./prescriptionPdf.routes");
 const chatRoutes = require("./chat.routes");
 const FeedbackRoutes = require("./feedback.routes");
+const contactEmailRoutes = require("./contactEmail.routes");
 
 module.exports = (app) => {
   app.use("/api/auth", AuthRoutes);
@@ -30,4 +31,5 @@ module.exports = (app) => {
   app.use("/api", prescriptionPdfRoutes);
   app.use("/api/chat", chatRoutes);
   app.use("/api/feedback", FeedbackRoutes);
+  app.use("/api/contact", contactEmailRoutes);
 };
