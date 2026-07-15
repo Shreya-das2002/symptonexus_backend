@@ -1,8 +1,12 @@
 const PatientFeedback = require("../models/Patient_Feedback");
 const DoctorFeedback = require("../models/Doctor_Feedback");
-const Doctor = require("../models/doctor");
+const Doctor = require("../models/Doctor");
 const Patient = require("../models/patient");
 const Appointment = require("../models/Appointment");
+const User = require("../models/User");
+const Role = require("../models/Role");
+const DoctorSpecialization = require("../models/Doctor_specalization");
+const DomainLookup = require("../models/Domain_lookup");
 
 
 class FeedbackService {
@@ -821,14 +825,177 @@ class FeedbackService {
 static async getAllPatientFeedbacks() {
   try {
     const feedbacks = await PatientFeedback.findAll({
-      order: [["patient_feedback_id", "DESC"]],
-      raw: true,
+      include: [
+        {
+          model: Patient,
+          as: "patient",
+          attributes: [
+            "patient_id",
+            "first_name",
+            "middle_name",
+            "last_name"
+          ],
+          required: false
+        },
+
+        {
+          model: Appointment,
+          as: "appointment",
+          attributes: [
+            "appointment_id",
+            "appointment_no",
+            "doctor_id",
+            "booking_date",
+            "booking_status"
+          ],
+          required: false,
+
+          include: [
+            {
+              model: Doctor,
+              as: "doctor",
+              attributes: [
+                "doctor_id",
+                "doctor_no",
+                "first_name",
+                "middle_name",
+                "last_name",
+                "email",
+                "phone_no"
+              ],
+              required: false,
+
+              include: [
+                {
+                  model: DoctorSpecialization,
+                  as: "doctor_specializations",
+                  attributes: [
+                    "specialization_id"
+                  ],
+                  required: false,
+
+                  include: [
+                    {
+                      model: DomainLookup,
+                      as: "specializationLookup",
+                      attributes: [
+                        "domain_name",
+                        "domain_value"
+                      ],
+                      where: {
+                        domain_type: "specialization"
+                      },
+                      required: false
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+
+      order: [["patient_feedback_id", "DESC"]]
     });
+
+    const result = await Promise.all(
+      feedbacks.map(async (feedbackRow) => {
+        const feedback = feedbackRow.get({ plain: true });
+
+        const patientName = [
+          feedback.patient?.first_name,
+          feedback.patient?.middle_name,
+          feedback.patient?.last_name
+        ]
+          .filter(Boolean)
+          .join(" ");
+
+        const doctorName = [
+          feedback.appointment?.doctor?.first_name,
+          feedback.appointment?.doctor?.middle_name,
+          feedback.appointment?.doctor?.last_name
+        ]
+          .filter(Boolean)
+          .join(" ");
+
+        const patientUser = await User.findOne({
+          where: {
+            ref_id: feedback.patient_id,
+            user_type: 5
+          },
+          attributes: [
+            "user_id",
+            "user_name",
+            "user_type",
+            "status"
+          ],
+          include: [
+            {
+              model: DomainLookup,
+              as: "userTypeLookup",
+              attributes: [
+                "domain_name",
+                "domain_value"
+              ],
+              where: {
+                domain_type: "user_type"
+              },
+              required: false
+            }
+          ]
+        });
+
+        const doctorSpecialization =
+          feedback.appointment?.doctor?.doctor_specializations?.[0] || null;
+
+        return {
+          patient_feedback_id: feedback.patient_feedback_id,
+          patient_id: feedback.patient_id,
+          appointment_id: feedback.appointment_id,
+
+          experience: feedback.experience,
+          booking: feedback.booking,
+          doc_communication: feedback.doc_communication,
+          doc_professionalism: feedback.doc_professionalism,
+          waiting: feedback.waiting,
+          quality: feedback.quality,
+          staff: feedback.staff,
+          ai_accuracy: feedback.ai_accuracy,
+          website: feedback.website,
+          recommendation: feedback.recommendation,
+          consultation: feedback.consultation,
+          desc: feedback.desc,
+
+          patient_name: patientName || null,
+
+          user_id: patientUser?.user_id || null,
+          user_name: patientUser?.user_name || null,
+          user_type_id: patientUser?.user_type || null,
+          user_type: patientUser?.userTypeLookup?.domain_name || null,
+          user_status: patientUser?.status || null,
+
+          doctor_id: feedback.appointment?.doctor?.doctor_id || null,
+          doctor_name: doctorName || null,
+          doctor_email: feedback.appointment?.doctor?.email || null,
+          doctor_phone: feedback.appointment?.doctor?.phone_no || null,
+
+          specialization_id:
+            doctorSpecialization?.specialization_id || null,
+
+          specialization:
+            doctorSpecialization?.specializationLookup?.domain_name || null,
+
+          appointment_no: feedback.appointment?.appointment_no || null,
+          booking_date: feedback.appointment?.booking_date || null,
+          booking_status: feedback.appointment?.booking_status || null
+        };
+      })
+    );
 
     return {
       success: true,
       message: "Patient feedback list fetched successfully",
-      data: feedbacks,
+      data: result
     };
   } catch (error) {
     console.error("GET ALL PATIENT FEEDBACKS ERROR:", error);
@@ -836,26 +1003,156 @@ static async getAllPatientFeedbacks() {
     return {
       success: false,
       message: error.message,
-      statusCode: 500,
+      statusCode: 500
     };
   }
 }
 
+
 /* =====================================================
     GET ALL DOCTOR FEEDBACKS
+    No patient information returned
 ===================================================== */
 
 static async getAllDoctorFeedbacks() {
   try {
     const feedbacks = await DoctorFeedback.findAll({
-      order: [["doctor_feedback_id", "DESC"]],
-      raw: true,
+      include: [
+        {
+          model: Doctor,
+          as: "doctor",
+          attributes: [
+            "doctor_id",
+            "doctor_no",
+            "first_name",
+            "middle_name",
+            "last_name",
+            "email",
+            "phone_no"
+          ],
+          required: false,
+
+          include: [
+            {
+              model: DoctorSpecialization,
+              as: "doctor_specializations",
+              attributes: [
+                "specialization_id"
+              ],
+              required: false,
+
+              include: [
+                {
+                  model: DomainLookup,
+                  as: "specializationLookup",
+                  attributes: [
+                    "domain_name",
+                    "domain_value"
+                  ],
+                  where: {
+                    domain_type: "specialization"
+                  },
+                  required: false
+                }
+              ]
+            }
+          ]
+        }
+      ],
+
+      order: [["doctor_feedback_id", "DESC"]]
     });
+
+    const result = await Promise.all(
+      feedbacks.map(async (feedbackRow) => {
+        const feedback = feedbackRow.get({ plain: true });
+
+        const doctorName = [
+          feedback.doctor?.first_name,
+          feedback.doctor?.middle_name,
+          feedback.doctor?.last_name
+        ]
+          .filter(Boolean)
+          .join(" ");
+
+        /*
+         * IMPORTANT:
+         * ref_id can match patient_id also.
+         * So doctor user must be filtered with user_type: 4.
+         *
+         * domain_lookup:
+         * Doctor = 4
+         * Patient = 5
+         */
+
+        const doctorUser = await User.findOne({
+          where: {
+            ref_id: feedback.doctor_id,
+            user_type: 4
+          },
+          attributes: [
+            "user_id",
+            "user_name",
+            "user_type",
+            "status"
+          ],
+          include: [
+            {
+              model: DomainLookup,
+              as: "userTypeLookup",
+              attributes: [
+                "domain_name",
+                "domain_value"
+              ],
+              where: {
+                domain_type: "user_type"
+              },
+              required: false
+            }
+          ]
+        });
+
+        const doctorSpecialization =
+          feedback.doctor?.doctor_specializations?.[0] || null;
+
+        return {
+          doctor_feedback_id: feedback.doctor_feedback_id,
+          doctor_id: feedback.doctor_id,
+
+          experience: feedback.experience,
+          website: feedback.website,
+          management: feedback.management,
+          p_info: feedback.p_info,
+          system_performance: feedback.system_performance,
+          support_service: feedback.support_service,
+          p_cooperation: feedback.p_cooperation,
+          staff: feedback.staff,
+          recommendation: feedback.recommendation,
+          desc: feedback.desc,
+
+          doctor_name: doctorName || null,
+          doctor_email: feedback.doctor?.email || null,
+          doctor_phone: feedback.doctor?.phone_no || null,
+
+          user_id: doctorUser?.user_id || null,
+          user_name: doctorUser?.user_name || null,
+          user_type_id: doctorUser?.user_type || null,
+          user_type: doctorUser?.userTypeLookup?.domain_name || null,
+          user_status: doctorUser?.status || null,
+
+          specialization_id:
+            doctorSpecialization?.specialization_id || null,
+
+          specialization:
+            doctorSpecialization?.specializationLookup?.domain_name || null
+        };
+      })
+    );
 
     return {
       success: true,
       message: "Doctor feedback list fetched successfully",
-      data: feedbacks,
+      data: result
     };
   } catch (error) {
     console.error("GET ALL DOCTOR FEEDBACKS ERROR:", error);
@@ -863,11 +1160,10 @@ static async getAllDoctorFeedbacks() {
     return {
       success: false,
       message: error.message,
-      statusCode: 500,
+      statusCode: 500
     };
   }
 }
-        
 }
 
 
