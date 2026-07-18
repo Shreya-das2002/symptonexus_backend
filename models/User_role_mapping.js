@@ -19,8 +19,8 @@ const UserRoleMapping = sequelize.define("user_role_mappings", {
   },
 
   status: {
-    type: DataTypes.STRING,
-    defaultValue: "Active"
+    type: DataTypes.INTEGER,
+    defaultValue: 1
   }
 
 }, {

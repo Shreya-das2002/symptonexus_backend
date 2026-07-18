@@ -19,7 +19,7 @@ const DomainLookup = sequelize.define("domain_lookup", {
   },
 
   domain_value: {
-    type: DataTypes.STRING,
+    type: DataTypes.INTEGER,
     allowNull: false,
   },
 

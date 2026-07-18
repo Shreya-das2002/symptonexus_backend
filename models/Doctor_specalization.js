@@ -21,8 +21,8 @@ const DoctorSpecialization = sequelize.define("doctor_specializations", {
   long_desc: DataTypes.TEXT,
 
   status: {
-    type: DataTypes.STRING,
-    defaultValue: "Active",
+    type: DataTypes.INTEGER,
+    defaultValue: 1,
   },
 }, {
   timestamps: false,
