@@ -124,6 +124,7 @@ Appointment.belongsTo(Doctor, {
 Appointment.belongsTo(DomainLookup, {
   foreignKey: "booking_status",
   targetKey: "domain_value",
+  constraints: false,
   as: "statusLookup"
 });
 
@@ -198,24 +199,28 @@ Role.hasMany(User, {
 User.belongsTo(DomainLookup, {
   foreignKey: "user_type",
   targetKey: "domain_value",
+  constraints: false,
   as: "userTypeLookup"
 });
 
 DoctorDetail.belongsTo(DomainLookup, {
   foreignKey: "gender",
   targetKey: "domain_value",
+  constraints: false,
   as: "genderLookup"
 });
 
 AdminUser.belongsTo(DomainLookup, {
   foreignKey: "gender",
   targetKey: "domain_value",
+  constraints: false,
   as: "genderLookup"
 });
 
 DoctorSpecialization.belongsTo(DomainLookup, {
   foreignKey: "specialization_id",
   targetKey: "domain_value",
+  constraints: false,
   as: "specializationLookup"
 });
 /* =====================================================
@@ -339,6 +344,7 @@ AdminUserDetails.belongsTo(Address, {
 PatientDetails.belongsTo(DomainLookup, {
   foreignKey: "blood_group",
   targetKey: "domain_value",
+  constraints: false,
   as: "BloodGroup"
 });
 
@@ -346,6 +352,7 @@ PatientDetails.belongsTo(DomainLookup, {
 PatientDetails.belongsTo(DomainLookup, {
     foreignKey: "gender",
   targetKey: "domain_value",
+  constraints: false,
   as: "genderLookup"
 });
 

@@ -1,0 +1,10 @@
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=root
+DB_NAME=symptonexus
+PORT=4000
+JWT_SECRET=my_super_secret_key_123
+EMAIL_USER=symptonexus333@gmail.com
+EMAIL_PASS=luly jpjk spww kaop
+KAFKA_BROKER=localhost:9092
+KAFKAJS_NO_PARTITIONER_WARNING=1

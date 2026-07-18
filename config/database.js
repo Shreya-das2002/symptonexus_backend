@@ -1,17 +1,15 @@
 require("dotenv").config();
 const { Sequelize } = require("sequelize");
 
-const sequelize = new Sequelize(
-  process.env.DB_NAME,
-  process.env.DB_USER,
-  process.env.DB_PASSWORD,
-  {
-    host: process.env.DB_HOST,
-    dialect: "mysql",
+const sequelize = new Sequelize(process.env.DATABASE_URL, {
+    dialect: "postgres",
     logging: false,
 
     dialectOptions: {
-      connectTimeout: 60000,
+      ssl: {
+        require: true,
+        rejectUnauthorized: false,
+      },
     },
 
     pool: {
@@ -21,7 +19,6 @@ const sequelize = new Sequelize(
       idle: 5000,
       evict: 1000,
     },
-  }
-);
+  });
 
 module.exports = sequelize;
