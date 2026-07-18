@@ -17,7 +17,7 @@ require("./models/Patient_Feedback");
 require("./models/Doctor_Feedback.js");
 
 app.use(cors({
-  origin: "http://localhost:3000",
+  origin: "https://final-year-project-ud46.onrender.com",
   credentials: true,
   allowedHeaders: ["Content-Type", "Authorization"],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
