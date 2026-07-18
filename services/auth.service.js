@@ -14,7 +14,7 @@ const Address = require("../models/Address");
 const DoctorAvailability = require("../models/Doctor_Availablity");
 const DoctorSpecialization = require("../models/Doctor_specalization");
 const DoctorDetails = require("../models/Doctor_Details");
-const DoctorExperience = require("../models/Doctor_Experience");
+const DoctorExperience = require("../models/Doctor_experience");
 const PatientDetails = require("../models/Patient_Details");
 const Admin_user_Details = require("../models/Admin_user_Details");
 
