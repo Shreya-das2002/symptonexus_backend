@@ -8,7 +8,7 @@ const AdminUserDetails = require('./Admin_user_Details');
 const Doctor = require("./Doctor");
 const DoctorDetail = require("./Doctor_Details");
 const DoctorSpecialization = require("./Doctor_specalization");
-const DoctorExperience = require("./Doctor_Experience");
+const DoctorExperience = require("./Doctor_experience");
 
 const Patient = require("./patient");
 const PatientDetails = require("./Patient_Details");
