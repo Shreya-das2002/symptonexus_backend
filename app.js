@@ -5,8 +5,10 @@ const cors = require("cors");
 const app = express();
 
 const responseMiddleware = require("./middlewares/response.middleware");
-const { connectAppointmentProducer } = require("./kafka/producer/appointment.producer");
-const { runAppointmentConsumer } = require("./kafka/Consumer/appointment.consumer");
+// Kafka is temporarily disabled in production. Keep these imports for when
+// Kafka-based appointment processing is enabled again.
+// const { connectAppointmentProducer } = require("./kafka/producer/appointment.producer");
+// const { runAppointmentConsumer } = require("./kafka/Consumer/appointment.consumer");
 const { sequelize } = require("./models");
 
 require("./models/User");
@@ -40,14 +42,16 @@ const startServer = async () => {
     await sequelize.sync();
     console.log("Database synced");
 
-    try {
-      await connectAppointmentProducer();
-      await runAppointmentConsumer();
-      console.log("Kafka connected successfully");
-    } catch (kafkaError) {
-      console.error("Kafka startup failed:", kafkaError.message);
-      console.log("Server will continue without Kafka");
-    }
+    // Kafka is temporarily disabled in production. Appointment booking is
+    // handled directly by the backend service.
+    // try {
+    //   await connectAppointmentProducer();
+    //   await runAppointmentConsumer();
+    //   console.log("Kafka connected successfully");
+    // } catch (kafkaError) {
+    //   console.error("Kafka startup failed:", kafkaError.message);
+    //   console.log("Server will continue without Kafka");
+    // }
 
     const server = app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
