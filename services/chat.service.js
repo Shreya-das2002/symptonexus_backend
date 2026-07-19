@@ -1,7 +1,7 @@
 const axios = require("axios");
 const Chat = require("../models/Chat");
 
-const PYTHON_CHATBOT_URL = "http://127.0.0.1:8000/api/chat/symptom-check";
+const PYTHON_CHATBOT_URL = "https://symptonexus-agentic.onrender.com/api/chat/symptom-check";
 
 class ChatService {
   async processChat({ user_id, responder, message, conversation = [] }) {
