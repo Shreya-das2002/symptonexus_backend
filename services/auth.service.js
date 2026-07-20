@@ -200,7 +200,6 @@ if (user.status !== "Active") {
       profile = await Admin.findOne({
 
         where: { admin_user_id: user.ref_id },
-        where: { admin_user_id: user.ref_id },
   include: [
         {
           model: DomainLookup,
@@ -564,7 +563,9 @@ const buttons = await ControlMaster.findAll({
     const tokenPayload = {
 
       user_id: user.user_id,
-      role_id: role.role_id, 
+      // `role` is the lowercase role-name string.  The numeric ID comes from
+      // the role mapping and is required by role-based list APIs.
+      role_id,
       role
 
     };

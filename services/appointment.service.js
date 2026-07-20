@@ -260,7 +260,7 @@ static async getAllAppointments(userId, roleId, doctorId, patientId) {
         };
       }
 
-      doctorWhereCondition.created_by = userId;
+      doctorWhereCondition.created_by = Number(userId);
     }
     else if (Number(roleId) === 2) {
       // standard admin -> department wise

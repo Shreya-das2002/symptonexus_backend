@@ -297,7 +297,7 @@ else if (role && role.toLowerCase() === "standard admin") {
 
       else if (role && role.toLowerCase() === "guest admin") {
 
-        whereCondition.created_by = userId;
+        whereCondition.created_by = Number(userId);
 
       }
 
@@ -568,7 +568,7 @@ static async getDoctorList(userId, adminId, role, specializationId)
 else if (role && role.toLowerCase() === "guest admin") {
 
   whereCondition.status = "Active";    
-  whereCondition.created_by = userId;  
+  whereCondition.created_by = Number(userId);
 }
 
 /* PATIENT */

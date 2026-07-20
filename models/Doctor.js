@@ -36,7 +36,8 @@ const Doctor = sequelize.define('doctor', {
         defaultValue: DataTypes.NOW
     },
 
-    created_by: DataTypes.STRING,
+    // User IDs are numeric and are used in role-based WHERE predicates.
+    created_by: DataTypes.INTEGER,
      updated_on: {
     type: DataTypes.DATE,
     allowNull: true
